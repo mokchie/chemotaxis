@@ -250,7 +250,7 @@ class DQN():
     def choose_rand_action(self):
         return self.env.action_space_sample()
 
-    def human_choose_action(self,states):
+    def greedy_action(self,states):
         ss = self.preprocess(states)
         nmax = np.argmax(ss[0::2])
         nmin = np.argmin(ss[0::2])
