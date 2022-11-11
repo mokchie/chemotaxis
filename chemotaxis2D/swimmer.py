@@ -47,10 +47,11 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, rand=False, dump_freq=1):
+    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, vw=None, rand=False, dump_freq=1):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
+        self.vw = vw
         self.k0 = k0
         self.kw = kw
         self.kn = kn
@@ -79,7 +80,12 @@ class Swimmer:
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
+        if self.vw:
+            self.vs = list(np.linspace(self.v0+self.vw/2,self.v0-self.vw/2,self.kn))
+        else:
+            self.vs = [self.v0,]*self.kn
         self.kappa = self.actions[int(self.kn/2)]
+        self.v = self.vs[int(self.kn/2)]
         self.action_size = len(self.actions)
         self.rand = rand
         self.dump_freq = dump_freq
@@ -89,6 +95,7 @@ class Swimmer:
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
         self.kappa = self.actions[int(self.kn/2)]
+        self.v = self.vs[int(self.kn / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -125,7 +132,8 @@ class Swimmer:
     def reset_copy(self,swimmerc):
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
-        self.kappa = self.actions[int(self.kn/2)]        
+        self.kappa = self.actions[int(self.kn/2)]
+        self.v = self.vs[int(self.kn / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -147,27 +155,18 @@ class Swimmer:
         return states
 
     def step(self, states, target_kappa):
-        dt = self.dt
-        ntimes = int(np.round(self.Taction * 2 * np.pi / self.k0 / self.v0 / self.dt))
-        dt = self.Taction * 2 * np.pi / self.k0 / self.v0 / ntimes
-        cx0,cy0 = self.rx + self.nx / self.kappa, self.ry + self.ny / self.kappa
-        c_center0 = self.conc_field(cx0,cy0)
-
+        self.v = self.vs[self.actions.index(target_kappa)]
+        ntimes = int(np.round(self.Taction * 2 * np.pi / self.k0 / self.v / self.dt))
+        dt = self.Taction * 2 * np.pi / self.k0 / self.v / ntimes
         previous_states = deepcopy(states[0:-2])
-        kappa_slope = (target_kappa-self.kappa)/dt/ntimes
-        cx2, cy2 = self.rx + self.nx / target_kappa, self.ry + self.ny / target_kappa
         for i in range(ntimes):
-            #self.kappa += kappa_slope*dt
-            #kappa = self.kappa
             self.kappa = target_kappa
             kappa = self.kappa
             F = np.matrix([[self.tx,self.nx,self.rx],[self.ty,self.ny,self.ry],[0,0,1]])
-            A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
+            A = np.matrix([[0,-kappa*self.v,self.v],[kappa*self.v,0,0],[0,0,0]])
             F = F * matrixexp(A * dt)
             self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
-            # self.ax.scatter([self.rx,],[self.ry,],s=4)
-            # self.fig.canvas.draw()
-            # plt.pause(.00000000001)
+
             self.t += dt
             if self.epch%self.dump_freq==0:
                 self.fp.write('%f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.nx, self.ny, self.kappa))
@@ -184,11 +183,7 @@ class Swimmer:
                 break
             else:
                 self.done = False
-        # print('(x,y)',self.rx,self.ry)
-
-        # reward = self.conc_field(self.rx+self.nx/kappa,self.ry+self.ny/kappa)-np.average(states[0::2])
         cx, cy = self.rx + self.nx / target_kappa, self.ry + self.ny / target_kappa
-        c_center1 = self.conc_field(cx, cy)
         c = self.conc_field(self.rx, self.ry)
         ca0 = np.average(self.memc)
         self.memc.append(c)

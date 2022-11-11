@@ -102,9 +102,9 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
         Xr3 = np.array(Xr3)
         Yr3 = np.array(Yr3)
         if epch1%4==0:
-            ax1.plot(X1, Y1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
-            ax2.plot(Xr1, Yr1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
-            ax1.scatter((X1[-1],),(Y1[-1],),s=10,c='k')
+            #ax1.plot(X1, Y1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
+            #ax2.plot(Xr1, Yr1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
+            #ax1.scatter((X1[-1],),(Y1[-1],),s=10,c='k')
 
             ax1.plot(X2, Y2, '-.', color=cmap(epch2 / np.max(epochs2)), linewidth=1)
             ax2.plot(Xr2, Yr2, '-.', color=cmap(epch2 / np.max(epochs2)), linewidth=1)

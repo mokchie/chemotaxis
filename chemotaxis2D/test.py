@@ -37,11 +37,11 @@ for i in range(40):
     R3 = 0
     j=0
     while (not done1) and (not done2):
-        if j<state_size:
-            ai1 = agent1.greedy_action(state1) #use greedy strategy
-        else:
-            if j%(int(state_size/2))==0:
-                ai1 = agent1.swing_action(state1) #use swinging pattern
+        #if j<state_size:
+        #    ai1 = agent1.greedy_action(state1) #use greedy strategy
+        #else:
+        if j%(int(state_size/2))==0:
+            ai1 = agent1.swing_action(state1) #use swinging pattern
         next_state1, reward1, done1, _ = test_swimmer1.step(state1, test_swimmer1.actions[ai1])
         R1+=reward1
         state1 = deepcopy(next_state1)

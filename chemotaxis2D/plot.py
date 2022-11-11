@@ -7,7 +7,7 @@ cmap = plt.get_cmap('jet')
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 fig1, ax1 = plt.subplots(1, 1)
 fig2, ax2 = plt.subplots(1, 1)
-state_size = 2
+state_size = 8
 sname = 'sample-%s'%state_size
 pattern = re.compile(sname+"-epoch-([0-9]+).data$")
 filenames = []
@@ -57,6 +57,6 @@ ax1.set_xlabel('X')
 ax1.set_ylabel('Y')
 ax1.set_aspect('equal')
 ax2.plot(Epoch,Gain)
-ax2.set_xlabel('epoch')
+ax2.set_xlabel('episode')
 ax2.set_ylabel(r'$\Delta c$')
 plt.show()
