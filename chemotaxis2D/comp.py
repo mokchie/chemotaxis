@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import re,os
 import numpy as np
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
-state_size = 2
+state_size = 8
 sname = 'test-%s'%state_size
 cmap = cm.get_cmap('jet')
 fig1, ax1 = plt.subplots(1, 1)

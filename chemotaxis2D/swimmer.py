@@ -156,8 +156,8 @@ class Swimmer:
 
     def step(self, states, target_kappa):
         self.v = self.vs[self.actions.index(target_kappa)]
-        ntimes = int(np.round(self.Taction * 2 * np.pi / self.k0 / self.v / self.dt))
-        dt = self.Taction * 2 * np.pi / self.k0 / self.v / ntimes
+        ntimes = int(np.round(self.Taction * 2 * np.pi / self.k0 / self.v0 / self.dt))
+        dt = self.Taction * 2 * np.pi / self.k0 / self.v0 / ntimes
         previous_states = deepcopy(states[0:-2])
         for i in range(ntimes):
             self.kappa = target_kappa

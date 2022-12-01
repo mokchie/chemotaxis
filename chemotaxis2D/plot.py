@@ -7,7 +7,7 @@ cmap = plt.get_cmap('jet')
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 fig1, ax1 = plt.subplots(1, 1)
 fig2, ax2 = plt.subplots(1, 1)
-state_size = 8
+state_size = 2
 sname = 'sample-%s'%state_size
 pattern = re.compile(sname+"-epoch-([0-9]+).data$")
 filenames = []

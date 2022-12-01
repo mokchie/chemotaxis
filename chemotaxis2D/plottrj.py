@@ -8,7 +8,7 @@ from swimmer import Conc_field
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 conc_field = Conc_field(c0=20,k=1)
 cmap = cm.get_cmap('jet')
-state_size = 4
+state_size = 8
 sname = 'test-%s'%state_size
 fig0, ax0 = plt.subplots(1, )
 fig1,(ax1,ax2,ax3) = plt.subplots(3, 1, sharex=True)
