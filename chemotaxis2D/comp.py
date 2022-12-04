@@ -21,7 +21,7 @@ epochs2 = []
 epochs3 = []
 direct = "data"
 for root, dirs, files in os.walk(direct):
-    if root == 'data':
+    if root == direct:
         for name in files:
             found1 = pattern1.match(name)
             if found1:

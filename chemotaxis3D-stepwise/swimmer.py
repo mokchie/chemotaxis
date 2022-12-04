@@ -35,16 +35,21 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, rand=False, dump_freq=1, tau0=0, tauw=0, taun=1, rz0=0, tz0=0, nz0=0, zb=(0,0), targetz=0, dim=2, penalty=0):
+    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, rand=False, dump_freq=1, tau0=0, tauw=0, taun=1, rz0=0, tz0=0, nz0=0, zb=(0,0), targetz=0, dim=2):
+        if kn%2==0 or taun==0:
+            print('kn and taun should be an odd integer')
+            exit(0)
         self.sname = sname
         self.epch = 0
         self.v0 = v0
         self.k0 = k0
         self.kw = kw
         self.kn = kn
+        self.dk = self.kw/(self.kn-1)
         self.tau0 = tau0
         self.tauw = tauw
         self.taun = taun
+        self.dtau = self.tauw/(self.taun-1)
         self.dim = dim
         if self.dim == 2:
             self.lstate = 2
@@ -90,32 +95,31 @@ class Swimmer:
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         if self.dim==2:
-            self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
-            self.kappa = self.actions[int(self.kn/2)]
+            self.actions = (-1,0,1)
+            self.kappa = self.k0
             self.tau = self.tau0
         else:
-            kappa_list = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
-            tau_list = list(np.linspace(tau0-tauw/2,tau0+tauw/2,self.taun))
+            kappa_act_list = (-1,0,1)
+            tau_act_list = (-1,0,1)
             self.actions = []
-            for ka in kappa_list:
-                for tu in tau_list:
-                    self.actions.append((ka,tu))
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]
+            for k_a in kappa_act_list:
+                for tau_a in tau_act_list:
+                    self.actions.append((k_a,tau_a))
+            self.kappa,self.tau = self.k0,self.tau0
         
         self.action_size = len(self.actions)
         self.rand = rand
         self.dump_freq = dump_freq
         self.memc = deque(maxlen=self.state_size)
-        self.penalty = penalty
 
     def reset(self,theta=None):
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
         if self.dim==2:
-            self.kappa = self.actions[int(self.kn/2)]
+            self.kappa = self.k0
             self.tau = self.tau0
         else:
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]
+            self.kappa,self.tau = self.k0,self.tau0
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -183,10 +187,10 @@ class Swimmer:
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
         if self.dim==2:
-            self.kappa = self.actions[int(self.kn/2)]
+            self.kappa = self.k0
             self.tau = self.tau0
         else:
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]           
+            self.kappa,self.tau = self.k0,self.tau0
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -217,27 +221,44 @@ class Swimmer:
         else:
             states = np.array([c, self.kappa, self.tau] * self.state_size)
         return states
+    def constraint_k(self):
+        if self.kappa<self.k0-self.kw/2:
+            self.kappa = self.k0-self.kw/2
+        elif self.kappa>self.k0+self.kw/2:
+            self.kappa = self.k0+self.kw/2
+    def constrain_tau(self):
+        if self.tau<self.tau0-self.tauw/2:
+            self.tau = self.tau0-self.tauw/2
+        elif self.tau>self.tau0+self.tauw/2:
+            self.tau = self.tau0+self.tauw/2
 
-    def step(self, states, target):
+    def step(self, states, action):
         if self.dim == 2:
+            k_a = action
+            self.kappa = self.kappa+k_a*self.dk
+            self.constraint_k()
+            kappa = self.kappa
             omega = self.v0*self.k0
         else:
+            k_a,tau_a = action
+            self.kappa += k_a*self.dk
+            self.tau += tau_a*self.dtau
+            self.constraint_k()
+            self.constrain_tau()
+            kappa = self.kappa
+            tau = self.tau
             omega = self.v0*np.sqrt(self.k0**2+self.tau0**2)
+
         ntimes = int(np.round(self.Taction * 2 * np.pi / omega / self.dt))
         dt = self.Taction * 2 * np.pi / omega / ntimes
         previous_states = deepcopy(states[0:-self.lstate])
         for i in range(ntimes):
             if self.dim == 2:
-                self.kappa = target
-                kappa = self.kappa
                 F = np.matrix([[self.tx,self.nx,self.rx],[self.ty,self.ny,self.ry],[0,0,1]])
                 A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
                 F = F * matrixexp(A * dt)
                 self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
             else:
-                self.kappa,self.tau = target
-                kappa = self.kappa
-                tau = self.tau
                 F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
                 A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
                 F = F * matrixexp(A * dt)
@@ -279,15 +300,11 @@ class Swimmer:
         ca1 = np.average(self.memc)
         #reward = (c_center1 - c_center0)*10
         if self.dim==2:
-            reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k - np.abs(self.kappa-previous_states[1])/self.k0*self.penalty
+            reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k
         else:
             rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
             rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
-            r0 = self.k0/(self.k0**2+self.tau0**2)
-            rp = previous_states[1]/(previous_states[1]**2+previous_states[2]**2)
-            rc = self.kappa/(self.kappa**2+self.tau**2)
-            reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k - np.abs(1/rc-1/rp)*r0*self.penalty
-        #pdb.set_trace()
+            reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
         if self.dim == 2:
             return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
         else:
@@ -357,26 +374,6 @@ class DQN():
 
     def choose_rand_action(self):
         return self.env.action_space_sample()
-
-    def human_choose_action(self,states):
-        if self.env.dim != 2:
-            print('greedy strategy only works for 2d')
-            raise TypeError
-        ss = self.preprocess(states)
-        nmax = np.argmax(ss[0::self.env.lstate])
-        nmin = np.argmin(ss[0::self.env.lstate])
-        #pdb.set_trace()
-        if nmax == 0:
-            return -1
-        elif nmin == 0:
-            return 0
-        else:
-            return self.env.actions.index(states[1])
-    def swing_action(self,states):
-        if self.env.dim == 2:
-            return self.env.action_size - self.env.actions.index(states[1]) - 1
-        else:
-            return self.env.action_size - self.env.actions.index((states[1],states[2])) - 1
 
     def replay(self, batch_size):
         x_batch, y_batch = [], []

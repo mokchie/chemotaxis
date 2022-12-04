@@ -10,7 +10,7 @@ cmap = cm.get_cmap('jet')
 fig1 = plt.figure()
 ax1 = plt.axes(projection='3d')
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("sample-epoch-([0-9]+).data$")
+pattern = re.compile("test-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
@@ -53,7 +53,7 @@ for epch, filename in files:
         Epoch.append(epch)
         Gain.append(Y[-1]-Y[0])
 ax2.plot(Epoch,Gain)
-ax2.set_xlabel('epoch')
+ax2.set_xlabel('N')
 ax2.set_ylabel(r'$\Delta c$')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')

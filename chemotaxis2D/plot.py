@@ -7,14 +7,14 @@ cmap = plt.get_cmap('jet')
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 fig1, ax1 = plt.subplots(1, 1)
 fig2, ax2 = plt.subplots(1, 1)
-state_size = 2
+state_size = 8
 sname = 'sample-%s'%state_size
 pattern = re.compile(sname+"-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
-direct = "data"
+direct = "v0data"
 for root, dirs, files in os.walk(direct):
-    if root == 'data':
+    if root == direct:
         for name in files:
             found = pattern.match(name)
             if found:
