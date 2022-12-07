@@ -38,7 +38,7 @@ for epch, filename in files:
             X.append(rx)
             Y.append(ry)
             Z.append(rz)
-    if epch % 1 == 0:
+    if epch % 8 == 0:
         X = np.array(X)
         Y = np.array(Y)
         Z = np.array(Z)

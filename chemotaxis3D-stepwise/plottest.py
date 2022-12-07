@@ -52,6 +52,7 @@ for epch, filename in files:
         ax1.scatter((X[-1],),(Y[-1],),(Z[-1],),s=10,c='k')
         Epoch.append(epch)
         Gain.append(Y[-1]-Y[0])
+ax1.scatter([0,],[0,],[0,],s=30,c='r')
 ax2.plot(Epoch,Gain)
 ax2.set_xlabel('N')
 ax2.set_ylabel(r'$\Delta c$')

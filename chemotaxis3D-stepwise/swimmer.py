@@ -15,6 +15,13 @@ class Conc_field:
     def get_conc(self,x,y,z=0):
         # return c0-np.sqrt(x**2+y**2)/2.5
         return self.c0+self.k*y
+class Conc_field_radial:
+    def __init__(self,c0,k):
+        self.c0 = c0
+        self.k = k
+    def get_conc(self,x,y,z=0):
+        return self.c0-np.sqrt(x**2+y**2+z**2)*self.k
+        #return self.c0+self.k*y
 def matrixexp(A):
     n,m = A.shape
     E = np.matrix(np.eye(n,m))
@@ -35,8 +42,8 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, rand=False, dump_freq=1, tau0=0, tauw=0, taun=1, rz0=0, tz0=0, nz0=0, zb=(0,0), targetz=0, dim=2):
-        if kn%2==0 or taun==0:
+    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, Regg, rand=False, dump_freq=1, tau0=0, tauw=0, taun=1, rz0=0, tz0=0, nz0=0, zb=(0,0), targetz=0, dim=2):
+        if kn%2==0 or taun%2==0:
             print('kn and taun should be an odd integer')
             exit(0)
         self.sname = sname
@@ -94,6 +101,7 @@ class Swimmer:
         self.done = False
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
+        self.Regg = Regg
         if self.dim==2:
             self.actions = (-1,0,1)
             self.kappa = self.k0
@@ -280,7 +288,7 @@ class Swimmer:
                 disp1 = np.sqrt((self.rx - self.targetx) ** 2 + (self.ry - self.targety) ** 2)
             else:
                 disp1 = np.sqrt((self.rx - self.targetx) ** 2 + (self.ry - self.targety) ** 2 + (self.rz - self.targetz) ** 2)
-            if disp1 < eps:
+            if disp1 < eps+self.Regg:
                 self.done = True
                 if self.epch%self.dump_freq==0:
                     self.fp.close()
