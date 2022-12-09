@@ -9,7 +9,7 @@ import pdb
 from copy import deepcopy
 eps = 0.2
 class Conc_field:
-    def __init__(self,c0,k):
+    def __init__(self,c0=200,k=1):
         self.c0 = c0
         self.k = k
     def get_conc(self,x,y,z=0):
@@ -35,7 +35,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, v0, k0, kw, kn, t0, rx0, ry0, tx0, ty0, nx0, ny0, dt, Taction, field, targetx, targety, lifespan, sname, xb, yb, state_size, rand=False, dump_freq=1, tau0=0, tauw=0, taun=1, rz0=0, tz0=0, nz0=0, zb=(0,0), targetz=0, dim=2, penalty=0):
+    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -106,7 +106,6 @@ class Swimmer:
         self.rand = rand
         self.dump_freq = dump_freq
         self.memc = deque(maxlen=self.state_size)
-        self.penalty = penalty
 
     def reset(self,theta=None):
         self.memc = deque(maxlen=self.state_size)
@@ -172,7 +171,7 @@ class Swimmer:
                 self.fp.write('%f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.tx, self.ty, self.nx, self.ny, self.kappa))
             else:
                 self.fp.write('%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.rz, self.tx, self.ty, self.tz, self.nx, self.ny, self.nz, self.bx, self.by, self.bz, self.kappa, self.tau))
-        c = self.get_conc(self.rx, self.ry)
+        c = self.get_conc(self.rx, self.ry, self.rz)
         self.memc.append(c)
         if self.dim == 2:
             states = np.array([c,self.kappa] * self.state_size)
@@ -279,14 +278,11 @@ class Swimmer:
         ca1 = np.average(self.memc)
         #reward = (c_center1 - c_center0)*10
         if self.dim==2:
-            reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k - np.abs(self.kappa-previous_states[1])/self.k0*self.penalty
+            reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k
         else:
             rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
             rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
-            r0 = self.k0/(self.k0**2+self.tau0**2)
-            rp = previous_states[1]/(previous_states[1]**2+previous_states[2]**2)
-            rc = self.kappa/(self.kappa**2+self.tau**2)
-            reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k - np.abs(1/rc-1/rp)*r0*self.penalty
+            reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
         #pdb.set_trace()
         if self.dim == 2:
             return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
@@ -298,7 +294,7 @@ class Swimmer:
         return random.randrange(self.action_size)
 
 class DQN():
-    def __init__(self, swimmer, epochs, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98):
+    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98):
         self.memory = deque(maxlen=10000)
         self.env = swimmer
         self.input_size = self.env.state_size*self.env.lstate
@@ -323,6 +319,7 @@ class DQN():
         self.model.add(Dense(24, activation='tanh'))
         self.model.add(Dense(self.action_size, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(learning_rate=alpha, decay=alpha_decay))
+
     def preprocess(self,states):
         states_out = []
         if self.env.dim == 2:
@@ -330,7 +327,7 @@ class DQN():
             sa2 = self.env.k0
             for i,s in enumerate(states):
                 if i%self.env.lstate==0:
-                    states_out.append((s-sa1)*self.env.k0)
+                    states_out.append((s-sa1)*self.env.k0/self.env.conc_field.k)
                 else:
                     states_out.append((s-sa2)/(self.env.kw/2))
         else:
@@ -339,7 +336,7 @@ class DQN():
             sa3 = self.env.tau0
             for i,s in enumerate(states):
                 if i%self.env.lstate==0:
-                    states_out.append((s-sa1)*self.env.k0)
+                    states_out.append((s-sa1)*self.env.k0/self.env.conc_field.k)
                 elif (i-1)%self.env.lstate==0:
                     states_out.append((s-sa2)/(self.env.kw/2))
                 else:
@@ -395,12 +392,15 @@ class DQN():
         self.epsilon = max(self.epsilon_min, self.epsilon_decay * self.epsilon)  # decrease epsilon
 
     def train(self):
+        self.frw = open('data/%s-rewards.data' % (self.env.sname,), 'w')
         scores = deque(maxlen=8)
         avg_scores = []
         for e in range(self.epochs):
             print('epoch ', e)
             states = self.env.reset()
             done = False
+            rets = []
+            tot_reward = 0
             i = 1
             while not done:
                 #pdb.set_trace()
@@ -416,15 +416,20 @@ class DQN():
                     # self.epsilon = max(self.epsilon_min, self.epsilon_decay*self.epsilon) # decrease epsilon
                 states = next_states
                 i += 1
+                rets.append(reward)
+                tot_reward+=reward
+            ret_sum = 0
+            for ret in reversed(rets):
+                ret_sum = ret+self.gamma*ret_sum
             if self.env.dim == 2:
                 scores.append(self.env.get_conc(self.env.rx,self.env.ry) - self.env.get_conc(self.env.rx0,self.env.ry0))
             else:
                 scores.append(self.env.get_conc(self.env.rx, self.env.ry, self.env.rz) - self.env.get_conc(self.env.rx0, self.env.ry0, self.env.rz0))
-
+            self.frw.write('%s %s %s\n' % (e, ret_sum, tot_reward))
             mean_score = np.mean(scores)
-            print('mean_score ', mean_score)
+            print(f'tot_reward: {tot_reward} return: {ret_sum} mean_score: {mean_score}' )
             avg_scores.append(mean_score)
             self.replay(self.batch_size)
-
+        self.frw.close()
         print('Run {} episodes'.format(e))
         return avg_scores

@@ -8,7 +8,7 @@ conc_field = Conc_field(c0=20,k=1)
 state_size = 8
 swimmer = Swimmer(v0=1,
                   k0=6.5, kw=2, kn=5,
-                  tau0=1.0, tauw=1.0, taun=5,
+                  tau0=6.7, tauw=2, taun=5,
                   t0=0,
                   rx0=2, ry0=10, rz0=4,
                   tx0=1, ty0=0, tz0=0,
