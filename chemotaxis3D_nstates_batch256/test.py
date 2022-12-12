@@ -3,9 +3,9 @@ import tensorflow as tf
 
 from swimmer import *
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-state_size = 8
+state_size = 4
 sname = 'test'
-loaded_model = tf.keras.models.load_model('saved_model/saved_model1')
+loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample_n4')
 clear(sname)
 conc_field = Conc_field(c0=20,k=1)
 test_swimmer1 = Swimmer(dim=3,
