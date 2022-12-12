@@ -159,9 +159,20 @@ class Swimmer:
             else:
                 self.tx, self.ty, self.tz = np.cos(theta2), np.sin(theta1)*np.sin(theta2), -np.cos(theta1)*np.sin(theta2)
                 self.nx, self.ny, self.nz = np.sin(theta2)*np.sin(theta3), np.cos(theta1)*np.cos(theta3) - np.cos(theta2)*np.sin(theta1)*np.sin(theta3), np.cos(theta3)*np.sin(theta1) + np.cos(theta1)*np.cos(theta2)*np.sin(theta3)
+
             self.bx = self.ty*self.nz-self.tz*self.ny
             self.by = self.tz*self.nx-self.tx*self.nz
             self.bz = self.tx*self.ny-self.ty*self.nx
+            self.tx0 = self.tx
+            self.ty0 = self.ty
+            self.tz0 = self.tz
+            self.nx0 = self.nx
+            self.ny0 = self.ny
+            self.nz0 = self.nz
+            self.bx0 = self.bx
+            self.by0 = self.by
+            self.bz0 = self.bz
+            
 
 
         self.done = False
@@ -216,7 +227,64 @@ class Swimmer:
         else:
             states = np.array([c, self.kappa, self.tau] * self.state_size)
         return states
+    def spermtrj(self,mu,rho):
+        '''this sperm trj only works in 3D.'''
+        T = [0,]
+        X = [self.rx0,]
+        Y = [self.ry0,]
+        Z = [self.rz0,]
+        rx = self.rx0
+        ry = self.ry0
+        rz = self.rz0
+        tx = self.tx0
+        ty = self.ty0
+        tz = self.tz0
+        nx = self.nx0
+        ny = self.ny0
+        nz = self.nz0
+        bx = self.bx0
+        by = self.by0
+        bz = self.bz0
 
+        a = 1
+        if self.dim == 2:
+            p = 1/self.get_conc(rx, ry)
+        else:
+            p = 1/self.get_conc(rx, ry, rz)
+        t = 0
+        while t<=self.lifespan:
+            t+=self.dt
+            a0 = a
+            p0 = p
+            s = self.get_conc(rx,ry,rz)
+            if self.dim == 2:
+                kappa = self.k0-rho*self.k0*(a0-1)
+                F = np.matrix([[tx,nx,rx],[ty,ny,ry],[0,0,1]])
+                A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
+                F = F * matrixexp(A * dt)
+                rx, ry, tx, ty, nx, ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
+            else:
+                kappa = self.k0-rho*self.k0*(a0-1)                
+                tau = self.tau0+rho*self.tau0*(a0-1)
+                F = np.matrix([[tx, nx, bx, rx], [ty, ny, by, ry], [tz, nz, bz,  rz], [0, 0, 0, 1]])
+                A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
+                F = F * matrixexp(A * dt)
+                rx, ry, rz = F[0, 3], F[1, 3], F[2, 3]
+                bx, by, bz = F[0, 2], F[1, 2], F[2, 2]
+                tx, ty, tz = F[0, 0], F[1, 0], F[2, 0]
+                nx, ny, nz = F[0, 1], F[1, 1], F[2, 1]
+
+            a = a0 + self.dt*(p0*s-a0)/mu
+            p = p0 + self.dt*p0*(1-a0)/mu
+            T.append(t)
+            X.append(rx)
+            Y.append(ry)
+            Z.append(rz)
+        if self.dim == 2:
+            return np.array(T),np.array(X),np.array(Y)
+        else:
+            return np.array(T),np.array(X),np.array(Y),np.array(Z)
+            
     def step(self, states, target):
         if self.dim == 2:
             omega = self.v0*self.k0
@@ -240,8 +308,8 @@ class Swimmer:
                 F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
                 A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
                 F = F * matrixexp(A * dt)
-                self.rx, self.ry, self. rz = F[0,3], F[1,3], F[2,3]
-                self.bx, self.by, self. bz = F[0, 2], F[1, 2], F[2, 2]
+                self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
+                self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
                 self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
                 self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
 
