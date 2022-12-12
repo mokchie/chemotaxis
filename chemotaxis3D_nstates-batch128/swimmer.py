@@ -227,7 +227,7 @@ class Swimmer:
         else:
             states = np.array([c, self.kappa, self.tau] * self.state_size)
         return states
-    def spermtrj(self,mu,rho):
+    def spermtrj(self,mu,rho,filename=None):
         '''this sperm trj only works in 3D.'''
         T = [0,]
         X = [self.rx0,]
@@ -280,7 +280,11 @@ class Swimmer:
             X.append(rx)
             Y.append(ry)
             Z.append(rz)
-        if self.dim == 2:
+        
+        with open('data/'+filename,'w') as ftrj:
+            for t,rx,ry,rz in zip(T,X,Y,Z):
+                ftrj.write('%s %s %s\n'%(t,rx,ry,rz))
+        if self.dim==2:
             return np.array(T),np.array(X),np.array(Y)
         else:
             return np.array(T),np.array(X),np.array(Y),np.array(Z)

@@ -33,6 +33,8 @@ scores1 = []
 for i in range(40):
     print('test',i)
     state1 = test_swimmer1.reset()
+    test_swimmer1.spermtrj(0.054,1,sname+'-trj-%s'%i) # mu=0.054s, \rho=1.0 low-gain steering mode
+    
     done1 = False
     R1 = 0
     j=0
