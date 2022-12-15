@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 import re,os
 import numpy as np
 import matplotlib
+import os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
+from swimmer import *
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 fig1 = plt.figure()
@@ -14,8 +20,9 @@ pattern = re.compile("test-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
+conc_field = Conc_field_radial(c0=200,k=1)
 for root, dirs, files in os.walk(direct):
-    if root == 'data':
+    if root == direct:
         for name in files:
             found = pattern.match(name)
             if found:
@@ -51,11 +58,12 @@ for epch, filename in files:
         ax1.plot3D(X, Y, Z, '-', color=cmap(epch / np.max(epochs)), linewidth=1)
         ax1.scatter((X[-1],),(Y[-1],),(Z[-1],),s=10,c='k')
         Epoch.append(epch)
-        Gain.append(Y[-1]-Y[0])
+        Gain.append(conc_field.get_conc(X[-1],Y[-1],Z[-1])-conc_field.get_conc(X[0],Y[0],Z[0]))
 ax2.plot(Epoch,Gain)
 ax2.plot(Epoch,np.zeros_like(Epoch)+np.average(Gain),'k--')
 ax2.set_xlabel('N')
 ax2.set_ylabel(r'$\Delta c$')
+ax1.scatter([0,],[0,],[0,],s=10,color='r')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')
 ax1.set_zlabel('z')

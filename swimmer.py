@@ -7,7 +7,7 @@ import re,os,sys
 import random
 import pdb
 from copy import deepcopy
-eps = 0.2
+eps = 0.01
 class Conc_field:
     def __init__(self,c0=200,k=1):
         self.c0 = c0
@@ -15,6 +15,13 @@ class Conc_field:
     def get_conc(self,x,y,z=0):
         # return c0-np.sqrt(x**2+y**2)/2.5
         return self.c0+self.k*y
+class Conc_field_radial:
+    def __init__(self,c0=200,k=1):
+        self.c0 = c0
+        self.k = k
+    def get_conc(self,x,y,z=0):
+        return self.c0-self.k*np.sqrt(x**2+y**2+z**2)
+
 def matrixexp(A):
     n,m = A.shape
     E = np.matrix(np.eye(n,m))
@@ -35,7 +42,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1):
+    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=0.5, actionAll=True):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -86,9 +93,11 @@ class Swimmer:
         self.targetx = targetx
         self.targety = targety
         self.targetz = targetz
+        self.Regg = Regg
         self.done = False
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
+        self.actionAll = actionAll
         if self.dim==2:
             self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             self.kappa = self.actions[int(self.kn/2)]
@@ -97,10 +106,14 @@ class Swimmer:
             kappa_list = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             tau_list = list(np.linspace(tau0-tauw/2,tau0+tauw/2,self.taun))
             self.actions = []
-            for ka in kappa_list:
-                for tu in tau_list:
-                    self.actions.append((ka,tu))
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]
+            if self.actionAll:
+                for ka in kappa_list:
+                    for tu in tau_list:
+                        self.actions.append((ka,tu))
+            else:
+                for ka, tu in zip(kappa_list, reversed(tau_list)):
+                    self.actions.append((ka, tu))
+            self.kappa, self.tau = self.actions[int(len(self.actions) / 2)]
         
         self.action_size = len(self.actions)
         self.rand = rand
@@ -114,7 +127,7 @@ class Swimmer:
             self.kappa = self.actions[int(self.kn/2)]
             self.tau = self.tau0
         else:
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]
+            self.kappa, self.tau = self.actions[int(self.kn * self.taun / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -227,7 +240,7 @@ class Swimmer:
         else:
             states = np.array([c, self.kappa, self.tau] * self.state_size)
         return states
-    def spermtrj(self,mu,rho,filename=None):
+    def spermtrj(self,mu,rho,sname=None):
         '''this sperm trj only works in 3D.'''
         T = [0,]
         X = [self.rx0,]
@@ -261,14 +274,14 @@ class Swimmer:
                 kappa = self.k0-rho*self.k0*(a0-1)
                 F = np.matrix([[tx,nx,rx],[ty,ny,ry],[0,0,1]])
                 A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
-                F = F * matrixexp(A * dt)
+                F = F * matrixexp(A * self.dt)
                 rx, ry, tx, ty, nx, ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
             else:
                 kappa = self.k0-rho*self.k0*(a0-1)                
                 tau = self.tau0+rho*self.tau0*(a0-1)
                 F = np.matrix([[tx, nx, bx, rx], [ty, ny, by, ry], [tz, nz, bz,  rz], [0, 0, 0, 1]])
                 A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
-                F = F * matrixexp(A * dt)
+                F = F * matrixexp(A * self.dt)
                 rx, ry, rz = F[0, 3], F[1, 3], F[2, 3]
                 bx, by, bz = F[0, 2], F[1, 2], F[2, 2]
                 tx, ty, tz = F[0, 0], F[1, 0], F[2, 0]
@@ -280,10 +293,10 @@ class Swimmer:
             X.append(rx)
             Y.append(ry)
             Z.append(rz)
-        
-        with open('data/'+filename,'w') as ftrj:
-            for t,rx,ry,rz in zip(T,X,Y,Z):
-                ftrj.write('%s %s %s\n'%(t,rx,ry,rz))
+        if sname:
+            with open('data/'+sname+'-trj-%s'%self.epch,'w') as ftrj:
+                for t,rx,ry,rz in zip(T,X,Y,Z):
+                    ftrj.write('%s %s %s %s\n'%(t,rx,ry,rz))
         if self.dim==2:
             return np.array(T),np.array(X),np.array(Y)
         else:
@@ -330,7 +343,8 @@ class Swimmer:
                 disp1 = np.sqrt((self.rx - self.targetx) ** 2 + (self.ry - self.targety) ** 2)
             else:
                 disp1 = np.sqrt((self.rx - self.targetx) ** 2 + (self.ry - self.targety) ** 2 + (self.rz - self.targetz) ** 2)
-            if disp1 < eps:
+            if disp1 < self.Regg:
+                print('success!')
                 self.done = True
                 if self.epch%self.dump_freq==0:
                     self.fp.close()
@@ -344,7 +358,7 @@ class Swimmer:
                 self.done = False
         # print('(x,y)',self.rx,self.ry)
 
-        c = self.get_conc(self.rx, self.ry)
+        c = self.get_conc(self.rx, self.ry, self.rz)
         ca0 = np.average(self.memc)
         self.memc.append(c)
         ca1 = np.average(self.memc)
@@ -352,8 +366,12 @@ class Swimmer:
         if self.dim==2:
             reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k
         else:
-            rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
-            rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
+            if self.actionAll:
+                rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
+                rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
+            else:
+                rmin = (self.k0 + self.kw / 2) / ((self.k0 + self.kw / 2) ** 2 + (self.tau0 - self.tauw / 2) ** 2)
+                rmax = (self.k0 - self.kw / 2) / ((self.k0 - self.kw / 2) ** 2 + (self.tau0 + self.tauw / 2) ** 2)
             reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
         #pdb.set_trace()
         if self.dim == 2:
@@ -366,7 +384,7 @@ class Swimmer:
         return random.randrange(self.action_size)
 
 class DQN():
-    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98):
+    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98, N_hidden = 3, N_neurons=24):
         self.memory = deque(maxlen=10000)
         self.env = swimmer
         self.input_size = self.env.state_size*self.env.lstate
@@ -376,6 +394,8 @@ class DQN():
         self.epsilon = 1.0
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
+        self.N_hidden = N_hidden
+        self.N_neurons = N_neurons
         self.epochs = epochs
         # self.hist_size = 1
         alpha = 0.01
@@ -384,11 +404,10 @@ class DQN():
         # Init model
         self.model = Sequential()
         #        self.model.add(keras.layers.LSTM(16,input_shape=(None,self.input_size)))
-        self.model.add(Dense(24, input_dim=self.input_size, activation='tanh'))
+        self.model.add(Dense(self.N_neurons, input_dim=self.input_size, activation='tanh'))
         #self.model.add(Dropout(0.3))
-        self.model.add(Dense(24, activation='tanh'))
-        #self.model.add(Dropout(0.3))
-        self.model.add(Dense(24, activation='tanh'))
+        for j in range(self.N_hidden-1):
+            self.model.add(Dense(self.N_neurons, activation='tanh'))
         self.model.add(Dense(self.action_size, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(learning_rate=alpha, decay=alpha_decay))
 

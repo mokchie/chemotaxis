@@ -30,7 +30,7 @@ swimmer = Swimmer(dim=3,
                   rand=True,
                   dump_freq=10)
 
-agent = DQN(swimmer, epochs=1600, batch_size=128, gamma=0.9, epsilon_min=0.1, epsilon_decay=0.998)
+agent = DQN(swimmer, epochs=1600, batch_size=128, gamma=0.9, epsilon_min=0.0, epsilon_decay=0.996)
 
 scores = agent.train()
 agent.model.save('saved_model/saved_model_'+sname)

@@ -1,6 +1,10 @@
 import numpy as np
 import tensorflow as tf
-
+import os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
 from swimmer import *
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 state_size = 4
@@ -33,7 +37,7 @@ scores1 = []
 for i in range(40):
     print('test',i)
     state1 = test_swimmer1.reset()
-    test_swimmer1.spermtrj(0.054,1,sname+'-trj-%s'%i) # mu=0.054s, \rho=1.0 low-gain steering mode
+    test_swimmer1.spermtrj(0.054,1,sname) # mu=0.054s, \rho=1.0 low-gain steering mode
     
     done1 = False
     R1 = 0

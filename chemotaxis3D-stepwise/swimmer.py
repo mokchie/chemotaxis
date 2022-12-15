@@ -303,7 +303,7 @@ class Swimmer:
                 self.done = False
         # print('(x,y)',self.rx,self.ry)
 
-        c = self.get_conc(self.rx, self.ry)
+        c = self.get_conc(self.rx, self.ry, self.rz)
         ca0 = np.average(self.memc)
         self.memc.append(c)
         ca1 = np.average(self.memc)

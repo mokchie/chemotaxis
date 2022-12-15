@@ -1,3 +1,8 @@
+import os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
 from swimmer import *
 import matplotlib.pyplot as plt
 os.environ['KMP_DUPLICATE_LIB_OK']='True'

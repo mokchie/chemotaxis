@@ -6,7 +6,7 @@ del path
 from swimmer import *
 import matplotlib.pyplot as plt
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-sname = 'sample_n4'
+sname = 'sample_Nh3'
 clear(sname)
 random.seed(39895)
 conc_field = Conc_field(c0=20,k=1)
@@ -30,7 +30,14 @@ swimmer = Swimmer(dim=3,
                   rand=True,
                   dump_freq=10)
 
-agent = DQN(swimmer, epochs=1600, batch_size=128, gamma=0.9, epsilon_min=0.1, epsilon_decay=0.998)
+agent = DQN(swimmer,
+            epochs=1600,
+            batch_size=128,
+            gamma=0.9,
+            epsilon_min=0.1,
+            epsilon_decay=0.998,
+            N_neurons=32,
+            N_hidden=3)
 
 scores = agent.train()
 agent.model.save('saved_model/saved_model_'+sname)
