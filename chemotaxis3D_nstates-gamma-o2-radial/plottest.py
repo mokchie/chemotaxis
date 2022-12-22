@@ -16,11 +16,11 @@ cmap = cm.get_cmap('jet')
 fig1 = plt.figure()
 ax1 = plt.axes(projection='3d')
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n4-epoch-([0-9]+).data$")
+pattern = re.compile("test-radial-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
-conc_field = Conc_field(c0=200,k=1)
+conc_field = Conc_field_radial(c0=200,k=1)
 for root, dirs, files in os.walk(direct):
     if root == direct:
         for name in files:

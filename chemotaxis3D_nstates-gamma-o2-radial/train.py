@@ -6,11 +6,11 @@ del path
 from swimmer_v2 import *
 import matplotlib.pyplot as plt
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-sname = 'sample-n2'
+sname = 'sample-radial'
 clear(sname)
 random.seed(39895)
-conc_field = Conc_field(c0=20,k=1)
-state_size = 2
+conc_field = Conc_field_radial(c0=200,k=1)
+state_size = 4
 swimmer = Swimmer(dim=3,
                   v0=2,
                   k0=6.5, kw=2.0, kn=2,
@@ -22,13 +22,14 @@ swimmer = Swimmer(dim=3,
                   Taction=1/state_size,
                   dt=0.002,
                   field=conc_field,
-                  targetx=0, targety=1000, targetz=0,
+                  targetx=0, targety=0, targetz=0,
                   lifespan=80,
                   state_size=state_size,
                   sname=sname,
-                  xb=[0,10],yb=[0,10],zb=[0,10],
+                  xb=[10,20],yb=[10,20],zb=[10,20],
                   rand=True,
                   dump_freq=50,
+                  Regg=1.0,
                   actionAll=False)
 
 agent = DQN(swimmer,

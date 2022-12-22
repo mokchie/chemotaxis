@@ -6,15 +6,14 @@ del path
 from swimmer_v2 import *
 import matplotlib.pyplot as plt
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-sname = 'sample-n2'
+sname = 'sample-n4'
 clear(sname)
 random.seed(39895)
 conc_field = Conc_field(c0=20,k=1)
-state_size = 2
-swimmer = Swimmer(dim=3,
+state_size = 4
+swimmer = Swimmer(dim=2,
                   v0=2,
                   k0=6.5, kw=2.0, kn=2,
-                  tau0=6.7, tauw=2.0, taun=2,
                   t0=0,
                   rx0=2, ry0=10, rz0=0,
                   tx0=1, ty0=0, tz0=0,
@@ -26,7 +25,7 @@ swimmer = Swimmer(dim=3,
                   lifespan=80,
                   state_size=state_size,
                   sname=sname,
-                  xb=[0,10],yb=[0,10],zb=[0,10],
+                  xb=[0,10],yb=[0,10],
                   rand=True,
                   dump_freq=50,
                   actionAll=False)

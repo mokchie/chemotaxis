@@ -14,26 +14,25 @@ sname = 'test-n2'
 loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n2')
 clear(sname)
 #conc_field = Conc_field_radial(c0=200,k=1)
-conc_field = Conc_field(c0=200,k=1)
-test_swimmer1 = Swimmer(dim=3,
-                  v0=1,
+conc_field = Conc_field(c0=20,k=1)
+test_swimmer1 = Swimmer(dim=2,
+                  v0=2,
                   k0=6.5, kw=2.0, kn=2,
-                  tau0=6.7, tauw=2.0, taun=2,
                   t0=0,
                   rx0=2, ry0=10, rz0=0,
                   tx0=1, ty0=0, tz0=0,
                   nx0=0, ny0=-1, nz0=0,
                   Taction=1/state_size,
-                  dt=0.008,
+                  dt=0.002,
                   field=conc_field,
                   targetx=0, targety=1000, targetz=0,
                   lifespan=320,
                   state_size=state_size,
                   sname=sname,
-                  xb=[40,50],yb=[40,50],zb=[40,50],
+                  xb=[40,50],yb=[40,50],
                   rand=True,
                   dump_freq=1,
-                  Regg=0.5,
+                  Regg=1.0,
                   actionAll=False)
 #agent1 = DQN(test_swimmer1, epochs=100, batch_size=128)
 

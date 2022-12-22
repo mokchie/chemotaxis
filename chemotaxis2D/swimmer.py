@@ -189,7 +189,7 @@ class Swimmer:
         self.memc.append(c)
         ca1 = np.average(self.memc)
         #reward = (c_center1 - c_center0)*10
-        reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))
+        reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k0
         #pdb.set_trace()
         return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
 
