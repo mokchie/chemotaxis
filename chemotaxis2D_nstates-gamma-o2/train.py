@@ -10,7 +10,7 @@ sname = 'sample-n4'
 clear(sname)
 random.seed(39895)
 conc_field = Conc_field(c0=20,k=1)
-state_size = 4
+state_size = 8
 swimmer = Swimmer(dim=2,
                   v0=2,
                   k0=6.5, kw=2.0, kn=2,
@@ -20,7 +20,7 @@ swimmer = Swimmer(dim=2,
                   nx0=0, ny0=-1, nz0=0,
                   Taction=1/state_size,
                   dt=0.002,
-                  field=conc_field,
+                  conc_field=conc_field,
                   targetx=0, targety=1000, targetz=0,
                   lifespan=80,
                   state_size=state_size,

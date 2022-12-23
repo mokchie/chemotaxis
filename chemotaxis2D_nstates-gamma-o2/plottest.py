@@ -13,10 +13,9 @@ del path
 from swimmer_v2 import *
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
-fig1 = plt.figure()
-ax1 = plt.axes(projection='3d')
+fig1,ax1 = plt.subplots(1,1)
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n4-epoch-([0-9]+).data$")
+pattern = re.compile("test-n2-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
@@ -36,35 +35,29 @@ Epoch = []
 for epch, filename in files:
     X = []
     Y = []
-    Z = []
     with open(direct+'/'+filename) as fp:
         for line in fp:
-            t, rx, ry, rz, tx, ty, tz, nx, ny, nz, bx, by, bz, kappa, tau = [float(item) for item in line.strip().split()]
+            t, rx, ry, tx, ty, nx, ny, kappa = [float(item) for item in line.strip().split()]
             #            if int(np.round(t/0.01))%20==0:
             #                ax.scatter([x,],[y,],c='r',s=5)
             X.append(rx)
             Y.append(ry)
-            Z.append(rz)
     if epch % 1 == 0:
         X = np.array(X)
         Y = np.array(Y)
-        Z = np.array(Z)
         x0 = 0#X[0]
         y0 = 0#Y[0]
-        z0 = 0#Z[0]
         X = X-x0
         Y = Y-y0
-        Z = Z-z0
-        ax1.plot3D(X, Y, Z, '-', color=cmap(epch / np.max(epochs)), linewidth=1)
-        ax1.scatter((X[-1],),(Y[-1],),(Z[-1],),s=10,c='k')
+        ax1.plot(X, Y, '-', color=cmap(epch / np.max(epochs)), linewidth=1)
+        ax1.scatter((X[-1],),(Y[-1],),s=10,c='k')
         Epoch.append(epch)
-        Gain.append(conc_field.get_conc(X[-1],Y[-1],Z[-1])-conc_field.get_conc(X[0],Y[0],Z[0]))
+        Gain.append(conc_field.get_conc(X[-1],Y[-1])-conc_field.get_conc(X[0],Y[0]))
 ax2.plot(Epoch,Gain)
 ax2.plot(Epoch,np.zeros_like(Epoch)+np.average(Gain),'k--')
 ax2.set_xlabel('N')
 ax2.set_ylabel(r'$\Delta c$')
-ax1.scatter([0,],[0,],[0,],s=10,color='r')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')
-ax1.set_zlabel('z')
+ax1.set_aspect('equal')
 plt.show()

@@ -11,14 +11,14 @@ cmap = cm.get_cmap('jet')
 fig1,ax1 = plt.subplots(1,1)
 fig2,ax2 = plt.subplots(1,1)
 fig3,ax3 = plt.subplots(1,1)
-sname = 'sample-n2'
+sname = 'sample-n4'
 pattern = re.compile(sname+"-epoch-([0-9]+).data$")
 reward_file = sname+"-rewards.data"
 filenames = []
 epochs = []
 direct = "data"
 for root, dirs, files in os.walk(direct):
-    if root == 'data':
+    if root == direct:
         for name in files:
             found = pattern.match(name)
             if found:

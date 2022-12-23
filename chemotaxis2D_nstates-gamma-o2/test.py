@@ -24,7 +24,7 @@ test_swimmer1 = Swimmer(dim=2,
                   nx0=0, ny0=-1, nz0=0,
                   Taction=1/state_size,
                   dt=0.002,
-                  field=conc_field,
+                  conc_field=conc_field,
                   targetx=0, targety=1000, targetz=0,
                   lifespan=320,
                   state_size=state_size,
@@ -49,7 +49,7 @@ for i in range(40):
         #    ai1 = agent1.greedy_action(state1) #use greedy strategy
         #else:
 
-        if j<state_size or random.random()<0.1:
+        if j<state_size or random.random()<0.0:
             ai1 =test_swimmer1.action_space_sample()
         else:
             ai1 = np.argmax(loaded_model.predict(np.array([test_swimmer1.preprocess(state1), ])))

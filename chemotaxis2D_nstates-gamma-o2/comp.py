@@ -4,22 +4,22 @@ import matplotlib.pyplot as plt
 import re,os
 import numpy as np
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
-state_size = 4
-sname = 'test-%s'%state_size
+state_size = 2
+sname = 'test-n%s'%state_size
 cmap = cm.get_cmap('jet')
 fig1, ax1 = plt.subplots(1, 1)
 fig2, ax2 = plt.subplots(1, 1)
 fig3, ax3 = plt.subplots(1, 1)
-pattern1 = re.compile(sname+"-1-epoch-([0-9]+).data$")
-pattern2 = re.compile(sname+"-2-epoch-([0-9]+).data$")
-pattern3 = re.compile(sname+"-3-epoch-([0-9]+).data$")
+pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
+pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
+pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")
 filenames1 = []
 filenames2 = []
 filenames3 = []
 epochs1 = []
 epochs2 = []
 epochs3 = []
-direct = "v0data"
+direct = "data"
 for root, dirs, files in os.walk(direct):
     if root == direct:
         for name in files:
@@ -50,7 +50,7 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
     Yr1 = []
     with open(direct+'/'+filename1) as fp1:
         for line in fp1:
-            t, x, y, nx, ny, kappa = [float(item) for item in line.strip().split()]
+            t, x, y, tx, ty, nx, ny, kappa = [float(item) for item in line.strip().split()]
             #            if int(np.round(t/0.01))%20==0:
             #                ax.scatter([x,],[y,],c='r',s=5)
             X1.append(x)
@@ -63,7 +63,7 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
     Yr2 = []
     with open(direct+'/'+filename2) as fp2:
         for line in fp2:
-            t, x, y, nx, ny, kappa = [float(item) for item in line.strip().split()]
+            t, x, y, tx, ty, nx, ny, kappa = [float(item) for item in line.strip().split()]
             #            if int(np.round(t/0.01))%20==0:
             #                ax.scatter([x,],[y,],c='r',s=5)
             X2.append(x)
@@ -76,7 +76,7 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
     Yr3 = []
     with open(direct+'/'+filename3) as fp3:
         for line in fp3:
-            t, x, y, nx, ny, kappa = [float(item) for item in line.strip().split()]
+            t, x, y, tx, ty, nx, ny, kappa = [float(item) for item in line.strip().split()]
             #            if int(np.round(t/0.01))%20==0:
             #                ax.scatter([x,],[y,],c='r',s=5)
             X3.append(x)

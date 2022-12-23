@@ -89,7 +89,7 @@ class Swimmer:
         self.by = self.by0
         self.bz = self.bz0
         self.conc_field = conc_field
-        self.get_conc = field.get_conc
+        self.get_conc = conc_field.get_conc
         self.vel_field = vel_field
         self.targetx = targetx
         self.targety = targety
@@ -213,7 +213,7 @@ class Swimmer:
             self.kappa = self.actions[int(self.kn/2)]
             self.tau = self.tau0
         else:
-            self.kappa,self.tau = self.actions[int(self.kn*self.taun/2)]           
+            self.kappa,self.tau = self.actions[int(len(self.actions) / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
@@ -283,17 +283,17 @@ class Swimmer:
                     A = np.matrix([[0,-kappa*self.v0,self.v0],
                                    [kappa*self.v0,0,0],
                                    [0,0,0]])
-                    F = F * matrixexp(A * dt)
+                    F = F * matrixexp(A * self.dt)
                     rx, ry, tx, ty, nx, ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
                 else:
                     vex,vey,vez = self.vel_field(rx,ry,rz)
-                    rx += (self.v0*tx + vex) * dt
-                    ry += (self.v0*ty + vey) * dt
+                    rx += (self.v0*tx + vex) * self.dt
+                    ry += (self.v0*ty + vey) * self.dt
                     omg = self.v0*kappa
-                    tx += (-omg * ty) * dt
-                    ty += (omg * tx) * dt
-                    nx += (-omg * ny) * dt
-                    ny += (omg * nx) * dt
+                    tx += (-omg * ty) * self.dt
+                    ty += (omg * tx) * self.dt
+                    nx += (-omg * ny) * self.dt
+                    ny += (omg * nx) * self.dt
             else:
                 kappa = self.k0-rho*self.k0*(a0-1)                
                 tau = self.tau0+rho*self.tau0*(a0-1)
@@ -301,7 +301,7 @@ class Swimmer:
                     F = np.matrix([[tx, nx, bx, rx], [ty, ny, by, ry], [tz, nz, bz,  rz], [0, 0, 0, 1]])
                     A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
 
-                        F = F * matrixexp(A * dt)         
+                    F = F * matrixexp(A * self.dt)
                     rx, ry, rz = F[0, 3], F[1, 3], F[2, 3]
                     bx, by, bz = F[0, 2], F[1, 2], F[2, 2]
                     tx, ty, tz = F[0, 0], F[1, 0], F[2, 0]
@@ -311,13 +311,13 @@ class Swimmer:
                     Nv = np.array([nx,ny,nz])
                     Bv = np.array([bx,by,bz])
                     vex,vey,vez = self.vel_field(rx,ry,rz)
-                    rx += (self.v0*tx + vex) * dt
-                    ry += (self.v0*ty + vey) * dt
-                    rz += (self.v0*tz + vey) * dt
+                    rx += (self.v0*tx + vex) * self.dt
+                    ry += (self.v0*ty + vey) * self.dt
+                    rz += (self.v0*tz + vey) * self.dt
                     Omg = self.v0 * (tau * Tv + kappa * Bv)
-                    Tv += np.cross(Omg,Tv) * dt
-                    Nv += np.cross(Omg,Nv) * dt
-                    Bv += np.cross(Omg,Bv) * dt
+                    Tv += np.cross(Omg,Tv) * self.dt
+                    Nv += np.cross(Omg,Nv) * self.dt
+                    Bv += np.cross(Omg,Bv) * self.dt
                     tx,ty,tz = Tv
                     nx,ny,nz = Nv
                     bx,by,bz = Bv
@@ -515,20 +515,26 @@ class DQN():
     def choose_rand_action(self):
         return self.env.action_space_sample()
 
-    def human_choose_action(self,states):
-        if self.env.dim != 2:
-            print('greedy strategy only works for 2d')
-            raise TypeError
+    def greedy_action(self,states):
         ss = self.env.preprocess(states)
         nmax = np.argmax(ss[0::self.env.lstate])
         nmin = np.argmin(ss[0::self.env.lstate])
         #pdb.set_trace()
         if nmax == 0:
-            return -1
+            if self.env.dim == 2:
+                return -1
+            else:
+                return 0
         elif nmin == 0:
-            return 0
+            if self.env.dim == 2:
+                return 0
+            else:
+                return -1
         else:
-            return self.env.actions.index(states[1])
+            if self.env.dim == 2:
+                return self.env.actions.index(states[1])
+            else:
+                return self.env.actions.index((states[1],states[2]))
     def swing_action(self,states):
         if self.env.dim == 2:
             return self.env.action_size - self.env.actions.index(states[1]) - 1
