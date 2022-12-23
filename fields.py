@@ -34,4 +34,10 @@ def get_interp(filename):
     print('finish')
     return interp
 
-def Conc_field
+class Conc_field:
+    def __init__(self,interp):
+        self.interp = interp
+        self.k = np.abs(interp(1,0,0)-interp(50,0,0))/50
+    def get_conc(self,x,y,z=0):
+        return interp(x,y,z)
+
