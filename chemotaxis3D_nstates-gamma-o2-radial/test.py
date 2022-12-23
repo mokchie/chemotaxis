@@ -9,12 +9,11 @@ if not path in sys.path:
 del path
 from swimmer_v2 import *
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-state_size = 2
-sname = 'test-n2'
-loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n2')
+state_size = 4
+sname = 'test-radial'
+loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-radial')
 clear(sname)
-#conc_field = Conc_field_radial(c0=200,k=1)
-conc_field = Conc_field(c0=200,k=1)
+conc_field = Conc_field_radial(c0=200,k=1)
 test_swimmer1 = Swimmer(dim=3,
                   v0=1,
                   k0=6.5, kw=2.0, kn=2,
@@ -26,8 +25,8 @@ test_swimmer1 = Swimmer(dim=3,
                   Taction=1/state_size,
                   dt=0.008,
                   field=conc_field,
-                  targetx=0, targety=1000, targetz=0,
-                  lifespan=320,
+                  targetx=0, targety=0, targetz=0,
+                  lifespan=640,
                   state_size=state_size,
                   sname=sname,
                   xb=[40,50],yb=[40,50],zb=[40,50],
@@ -39,7 +38,7 @@ test_swimmer1 = Swimmer(dim=3,
 
 scores1 = []
 
-for i in range(40):
+for i in range(1):
     print('test',i)
     state1 = test_swimmer1.reset()
     done1 = False
