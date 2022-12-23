@@ -42,7 +42,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=0.5, actionAll=True):
+    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -88,8 +88,9 @@ class Swimmer:
         self.bx = self.bx0
         self.by = self.by0
         self.bz = self.bz0
-        self.conc_field = field
+        self.conc_field = conc_field
         self.get_conc = field.get_conc
+        self.vel_field = vel_field
         self.targetx = targetx
         self.targety = targety
         self.targetz = targetz
@@ -151,7 +152,10 @@ class Swimmer:
                 theta3 = random.random() * 2 * np.pi
                 self.rx = random.uniform(self.xb[0], self.xb[1])
                 self.ry = random.uniform(self.yb[0], self.yb[1])
-                self.rz = random.uniform(self.zb[0], self.zb[1])
+                if self.dim != 2:
+                    self.rz = random.uniform(self.zb[0], self.zb[1])
+                else:
+                    self.rz = self.rz0
                 self.rx0 = self.rx
                 self.ry0 = self.ry
                 self.rz0 = self.rz
@@ -272,20 +276,51 @@ class Swimmer:
             s = self.get_conc(rx,ry,rz)
             if self.dim == 2:
                 kappa = self.k0-rho*self.k0*(a0-1)
-                F = np.matrix([[tx,nx,rx],[ty,ny,ry],[0,0,1]])
-                A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
-                F = F * matrixexp(A * self.dt)
-                rx, ry, tx, ty, nx, ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
+                if not self.vel_field:
+                    F = np.matrix([[tx,nx,rx],
+                                   [ty,ny,ry],
+                                   [0,0,1]])
+                    A = np.matrix([[0,-kappa*self.v0,self.v0],
+                                   [kappa*self.v0,0,0],
+                                   [0,0,0]])
+                    F = F * matrixexp(A * dt)
+                    rx, ry, tx, ty, nx, ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
+                else:
+                    vex,vey,vez = self.vel_field(rx,ry,rz)
+                    rx += (self.v0*tx + vex) * dt
+                    ry += (self.v0*ty + vey) * dt
+                    omg = self.v0*kappa
+                    tx += (-omg * ty) * dt
+                    ty += (omg * tx) * dt
+                    nx += (-omg * ny) * dt
+                    ny += (omg * nx) * dt
             else:
                 kappa = self.k0-rho*self.k0*(a0-1)                
                 tau = self.tau0+rho*self.tau0*(a0-1)
-                F = np.matrix([[tx, nx, bx, rx], [ty, ny, by, ry], [tz, nz, bz,  rz], [0, 0, 0, 1]])
-                A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
-                F = F * matrixexp(A * self.dt)
-                rx, ry, rz = F[0, 3], F[1, 3], F[2, 3]
-                bx, by, bz = F[0, 2], F[1, 2], F[2, 2]
-                tx, ty, tz = F[0, 0], F[1, 0], F[2, 0]
-                nx, ny, nz = F[0, 1], F[1, 1], F[2, 1]
+                if not self.vel_field:                
+                    F = np.matrix([[tx, nx, bx, rx], [ty, ny, by, ry], [tz, nz, bz,  rz], [0, 0, 0, 1]])
+                    A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
+
+                        F = F * matrixexp(A * dt)         
+                    rx, ry, rz = F[0, 3], F[1, 3], F[2, 3]
+                    bx, by, bz = F[0, 2], F[1, 2], F[2, 2]
+                    tx, ty, tz = F[0, 0], F[1, 0], F[2, 0]
+                    nx, ny, nz = F[0, 1], F[1, 1], F[2, 1]
+                else:
+                    Tv = np.array([tx,ty,tz])
+                    Nv = np.array([nx,ny,nz])
+                    Bv = np.array([bx,by,bz])
+                    vex,vey,vez = self.vel_field(rx,ry,rz)
+                    rx += (self.v0*tx + vex) * dt
+                    ry += (self.v0*ty + vey) * dt
+                    rz += (self.v0*tz + vey) * dt
+                    Omg = self.v0 * (tau * Tv + kappa * Bv)
+                    Tv += np.cross(Omg,Tv) * dt
+                    Nv += np.cross(Omg,Nv) * dt
+                    Bv += np.cross(Omg,Bv) * dt
+                    tx,ty,tz = Tv
+                    nx,ny,nz = Nv
+                    bx,by,bz = Bv
 
             a = a0 + self.dt*(p0*s-a0)/mu
             p = p0 + self.dt*p0*(1-a0)/mu
@@ -314,21 +349,55 @@ class Swimmer:
             if self.dim == 2:
                 self.kappa = target
                 kappa = self.kappa
-                F = np.matrix([[self.tx,self.nx,self.rx],[self.ty,self.ny,self.ry],[0,0,1]])
-                A = np.matrix([[0,-kappa*self.v0,self.v0],[kappa*self.v0,0,0],[0,0,0]])
-                F = F * matrixexp(A * dt)
-                self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
+                if not self.vel_field:
+                    F = np.matrix([[self.tx,self.nx,self.rx],
+                                   [self.ty,self.ny,self.ry],
+                                   [0,0,1]])
+                    A = np.matrix([[0,-kappa*self.v0,self.v0],
+                                   [kappa*self.v0,0,0],
+                                   [0,0,0]])
+                    
+                    F = F * matrixexp(A * dt)
+
+                    self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]    
+                else:
+                    vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
+                    self.rx += (self.v0*self.tx + vex) * dt
+                    self.ry += (self.v0*self.ty + vey) * dt
+                    omg = self.v0*kappa
+                    self.tx += (-omg * self.ty) * dt
+                    self.ty += (omg * self.tx) * dt
+                    self.nx += (-omg * self.ny) * dt
+                    self.ny += (omg * self.nx) * dt
+
             else:
                 self.kappa,self.tau = target
                 kappa = self.kappa
                 tau = self.tau
-                F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
-                A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
-                F = F * matrixexp(A * dt)
-                self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
-                self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
-                self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
-                self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
+                if not self.vel_field:
+                    F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
+                    A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
+
+                    F = F * matrixexp(A * dt)
+                    self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
+                    self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
+                    self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
+                    self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
+                else:
+                    Tv = np.array([self.tx,self.ty,self.tz])
+                    Nv = np.array([self.nx,self.ny,self.nz])
+                    Bv = np.array([self.bx,self.by,self.bz])
+                    vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
+                    self.rx += (self.v0*self.tx + vex) * dt
+                    self.ry += (self.v0*self.ty + vey) * dt
+                    self.rz += (self.v0*self.tz + vey) * dt
+                    Omg = self.v0 * (tau * Tv + kappa * Bv)
+                    Tv += np.cross(Omg,Tv) * dt
+                    Nv += np.cross(Omg,Nv) * dt
+                    Bv += np.cross(Omg,Bv) * dt
+                    self.tx,self.ty,self.tz = Tv
+                    self.nx,self.ny,self.nz = Nv
+                    self.bx,self.by,self.bz = Bv
 
             self.t += dt
             if self.epch%self.dump_freq==0:
