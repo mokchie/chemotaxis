@@ -14,6 +14,7 @@ conc_field = Conc_field(c0=20,k=1)
 
 swimmer = Swimmer(dim=2,
                   v0=2,
+                  vw=0.2,
                   k0=6.5, kw=2.0, kn=2,
                   t0=0,
                   rx0=2, ry0=10, rz0=0,

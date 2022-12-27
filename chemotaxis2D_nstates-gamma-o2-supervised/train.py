@@ -34,14 +34,14 @@ swimmer = Swimmer(dim=2,
 agent = DQN(swimmer,
             epochs=1600,
             batch_size=128,
-            gamma=0.9,
+            gamma=0.98,
             epsilon_min=0.1,
             epsilon_decay=0.998,
             N_neurons=32,
             N_hidden=4,
             )
 
-scores = agent.train()
+scores = agent.train(0)
 agent.model.save('saved_model/saved_model_'+sname)
 
 plt.plot(scores)

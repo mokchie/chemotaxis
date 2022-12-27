@@ -42,11 +42,12 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None):
+    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
         self.k0 = k0
+        self.vw = vw
         self.kw = kw
         self.kn = kn
         self.tau0 = tau0
@@ -103,6 +104,10 @@ class Swimmer:
             self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             self.kappa = self.actions[int(self.kn/2)]
             self.tau = self.tau0
+            if self.vw>0.0:
+                self.vs = list(np.linspace(self.v0 + self.vw / 2, self.v0 - self.vw / 2, self.kn))
+            else:
+                self.vs = [self.v0, ] * self.kn
         else:
             kappa_list = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             tau_list = list(np.linspace(tau0-tauw/2,tau0+tauw/2,self.taun))
@@ -111,17 +116,24 @@ class Swimmer:
                 for ka in kappa_list:
                     for tu in tau_list:
                         self.actions.append((ka,tu))
+                self.vs = [self.v0,]*len(self.actions)
             else:
                 for ka, tu in zip(kappa_list, reversed(tau_list)):
                     self.actions.append((ka, tu))
+                if self.vw > 0.0:
+                    self.vs = list(np.linspace(self.v0 + self.vw / 2, self.v0 - self.vw / 2, len(self.actions)))
+                else:
+                    self.vs = [self.v0, ] * len(self.actions)
+
             self.kappa,self.tau = self.actions[int(len(self.actions)/2)]
-        
+        self.v = self.vs[int(len(self.vs) / 2)]
         self.action_size = len(self.actions)
         self.rand = rand
         self.dump_freq = dump_freq
         self.memc = deque(maxlen=self.state_size)
 
     def reset(self,theta=None):
+        self.v = self.vs[int(len(self.vs) / 2)]
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
         if self.dim==2:
@@ -207,6 +219,7 @@ class Swimmer:
             states = np.array([c, self.kappa, self.tau] * self.state_size)
         return states
     def reset_copy(self,swimmerc):
+        self.v = self.vs[int(len(self.vs) / 2)]
         self.memc = deque(maxlen=self.state_size)
         self.epch += 1
         if self.dim==2:
@@ -338,6 +351,7 @@ class Swimmer:
             return np.array(T),np.array(X),np.array(Y),np.array(Z)
             
     def step(self, states, target):
+        self.v = self.vs[self.actions.index(target)]
         if self.dim == 2:
             omega = self.v0*self.k0
         else:
@@ -353,8 +367,8 @@ class Swimmer:
                     F = np.matrix([[self.tx,self.nx,self.rx],
                                    [self.ty,self.ny,self.ry],
                                    [0,0,1]])
-                    A = np.matrix([[0,-kappa*self.v0,self.v0],
-                                   [kappa*self.v0,0,0],
+                    A = np.matrix([[0,-kappa*self.v,self.v],
+                                   [kappa*self.v,0,0],
                                    [0,0,0]])
                     
                     F = F * matrixexp(A * dt)
@@ -362,9 +376,9 @@ class Swimmer:
                     self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]    
                 else:
                     vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
-                    self.rx += (self.v0*self.tx + vex) * dt
-                    self.ry += (self.v0*self.ty + vey) * dt
-                    omg = self.v0*kappa
+                    self.rx += (self.v*self.tx + vex) * dt
+                    self.ry += (self.v*self.ty + vey) * dt
+                    omg = self.v*kappa
                     self.tx += (-omg * self.ty) * dt
                     self.ty += (omg * self.tx) * dt
                     self.nx += (-omg * self.ny) * dt
@@ -376,7 +390,7 @@ class Swimmer:
                 tau = self.tau
                 if not self.vel_field:
                     F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
-                    A = np.matrix([[0, -kappa * self.v0, 0, self.v0], [kappa * self.v0, 0, -tau * self.v0, 0], [0, tau * self.v0, 0, 0], [0, 0, 0, 0]])
+                    A = np.matrix([[0, -kappa * self.v, 0, self.v], [kappa * self.v, 0, -tau * self.v, 0], [0, tau * self.v, 0, 0], [0, 0, 0, 0]])
 
                     F = F * matrixexp(A * dt)
                     self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
@@ -388,10 +402,10 @@ class Swimmer:
                     Nv = np.array([self.nx,self.ny,self.nz])
                     Bv = np.array([self.bx,self.by,self.bz])
                     vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
-                    self.rx += (self.v0*self.tx + vex) * dt
-                    self.ry += (self.v0*self.ty + vey) * dt
-                    self.rz += (self.v0*self.tz + vey) * dt
-                    Omg = self.v0 * (tau * Tv + kappa * Bv)
+                    self.rx += (self.v*self.tx + vex) * dt
+                    self.ry += (self.v*self.ty + vey) * dt
+                    self.rz += (self.v*self.tz + vey) * dt
+                    Omg = self.v * (tau * Tv + kappa * Bv)
                     Tv += np.cross(Omg,Tv) * dt
                     Nv += np.cross(Omg,Nv) * dt
                     Bv += np.cross(Omg,Bv) * dt
@@ -557,7 +571,7 @@ class DQN():
         self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=2)
         self.epsilon = max(self.epsilon_min, self.epsilon_decay * self.epsilon)  # decrease epsilon
 
-    def train(self):
+    def train(self,Nstep=0):
         self.frw = open('data/%s-rewards.data' % (self.env.sname,), 'w')
         scores = deque(maxlen=8)
         avg_scores = []
@@ -574,7 +588,10 @@ class DQN():
                     ai = self.choose_rand_action()
                     next_states, reward, done, _ = self.env.step(states, self.env.actions[ai])
                 else:
-                    ai = self.choose_action(states, self.epsilon)
+                    if e < Nstep:
+                        ai = self.greedy_action(states)
+                    else:
+                        ai = self.choose_action(states, self.epsilon)
                     next_states, reward, done, _ = self.env.step(states, self.env.actions[ai])
                     self.remember(deepcopy(states), ai, reward, next_states, done)
                     #pdb.set_trace()
