@@ -12,7 +12,7 @@ fig1 = plt.figure()
 ax1 = plt.axes(projection='3d')
 fig2,ax2 = plt.subplots(1,1)
 fig3,ax3 = plt.subplots(1,1)
-sname = 'sample-n2'
+sname = 'sample-n4'
 pattern = re.compile(sname+"-epoch-([0-9]+).data$")
 reward_file = sname+"-rewards.data"
 filenames = []

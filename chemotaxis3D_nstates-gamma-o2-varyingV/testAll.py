@@ -17,7 +17,7 @@ for epsilon in [0.0,0.1,0.2]:
     conc_field = Conc_field(c0=200,k=1)
     test_swimmer2 = Swimmer(dim=3,
                       v0=2,
-                      vw=0.2,
+                      vw = 0.2,
                       k0=6.5, kw=2.0, kn=2,
                       tau0=6.7, tauw=2.0, taun=2,
                       t0=0,

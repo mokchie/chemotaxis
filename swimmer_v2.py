@@ -42,7 +42,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None):
+    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=1):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -130,6 +130,8 @@ class Swimmer:
         self.action_size = len(self.actions)
         self.rand = rand
         self.dump_freq = dump_freq
+        self.xi_noise = xi_noise
+        self.saving_interval_dt = saving_interval_dt
         self.memc = deque(maxlen=self.state_size)
 
     def reset(self,theta=None):
@@ -201,9 +203,6 @@ class Swimmer:
             self.bx0 = self.bx
             self.by0 = self.by
             self.bz0 = self.bz
-            
-
-
         self.done = False
         # self.ax.clear()
         if self.epch%self.dump_freq==0:
@@ -211,7 +210,10 @@ class Swimmer:
                 self.fp.write('%f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.tx, self.ty, self.nx, self.ny, self.kappa))
             else:
                 self.fp.write('%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.rz, self.tx, self.ty, self.tz, self.nx, self.ny, self.nz, self.bx, self.by, self.bz, self.kappa, self.tau))
-        c = self.get_conc(self.rx, self.ry, self.rz)
+        if self.xi_noise>0:
+            c = self.get_conc(self.rx, self.ry, self.rz) + random.gauss(0,self.xi_noise*self.conc_field.k)
+        else:
+            c = self.get_conc(self.rx, self.ry, self.rz)
         self.memc.append(c)
         if self.dim == 2:
             states = np.array([c,self.kappa] * self.state_size)
@@ -249,8 +251,10 @@ class Swimmer:
                 self.fp.write('%f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.tx, self.ty, self.nx, self.ny, self.kappa))
             else:
                 self.fp.write('%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n' % (self.t, self.rx, self.ry, self.rz, self.tx, self.ty, self.tz, self.nx, self.ny, self.nz, self.bx, self.by, self.bz, self.kappa, self.tau))
-
-        c = self.get_conc(self.rx, self.ry)
+        if self.xi_noise>0:
+            c = self.get_conc(self.rx, self.ry, self.rz) + random.gauss(0,self.xi_noise*self.conc_field.k)
+        else:
+            c = self.get_conc(self.rx, self.ry, self.rz)
         self.memc.append(c)
         if self.dim == 2:
             states = np.array([c,self.kappa] * self.state_size)
@@ -414,7 +418,7 @@ class Swimmer:
                     self.bx,self.by,self.bz = Bv
 
             self.t += dt
-            if self.epch%self.dump_freq==0:
+            if self.epch%self.dump_freq==0 and i%self.saving_interval_dt==0:
                 if self.dim == 2:
                     self.fp.write('%f %f %f %f %f %f %f %f\n' % (
                     self.t, self.rx, self.ry, self.tx, self.ty, self.nx, self.ny, self.kappa))
@@ -440,8 +444,10 @@ class Swimmer:
             else:
                 self.done = False
         # print('(x,y)',self.rx,self.ry)
-
-        c = self.get_conc(self.rx, self.ry, self.rz)
+        if self.xi_noise>0:
+            c = self.get_conc(self.rx, self.ry, self.rz) + random.gauss(0,self.xi_noise*self.conc_field.k)
+        else:
+            c = self.get_conc(self.rx, self.ry, self.rz)
         ca0 = np.average(self.memc)
         self.memc.append(c)
         ca1 = np.average(self.memc)

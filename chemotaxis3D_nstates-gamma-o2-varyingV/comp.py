@@ -5,7 +5,7 @@ import re,os
 import numpy as np
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 state_size = 2
-epsilon = 0.0
+epsilon = 0.2
 sname = 'test-n%s-epsilon%s'%(state_size,epsilon)
 cmap = cm.get_cmap('jet')
 ax1 = plt.figure().add_subplot(projection='3d')
