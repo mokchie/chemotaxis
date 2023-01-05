@@ -42,7 +42,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=1):
+    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=10,sigma_kappa=0,sigma_tau=0):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -100,6 +100,8 @@ class Swimmer:
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         self.actionAll = actionAll
+        self.sigma_kappa = sigma_kappa
+        self.sigma_tau = sigma_tau
         if self.dim==2:
             self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             self.kappa = self.actions[int(self.kn/2)]
@@ -368,16 +370,27 @@ class Swimmer:
                 self.kappa = target
                 kappa = self.kappa
                 if not self.vel_field:
-                    F = np.matrix([[self.tx,self.nx,self.rx],
-                                   [self.ty,self.ny,self.ry],
-                                   [0,0,1]])
-                    A = np.matrix([[0,-kappa*self.v,self.v],
-                                   [kappa*self.v,0,0],
-                                   [0,0,0]])
-                    
-                    F = F * matrixexp(A * dt)
+                    if self.sigma_kappa<=0:
+                        F = np.matrix([[self.tx,self.nx,self.rx],
+                                       [self.ty,self.ny,self.ry],
+                                       [0,0,1]])
+                        A = np.matrix([[0,-kappa*self.v,self.v],
+                                       [kappa*self.v,0,0],
+                                       [0,0,0]])
+                        
+                        F = F * matrixexp(A * dt)
 
-                    self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]    
+                        self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
+                    else:
+                        self.rx += (self.v*self.tx) * dt
+                        self.ry += (self.v*self.ty) * dt
+                        omg = self.v*kappa
+                        kappa_xi = random.normal(scale=self.sigma_kappa)
+                        omg_xi = self.v*kappa_xi
+                        self.tx += (-omg * self.ty) * dt + (-omg_xi * self.ty) * np.sqrt(dt)
+                        self.ty += (omg * self.tx) * dt + (omg_xi * self.tx) * np.sqrt(dt)
+                        self.nx += (-omg * self.ny) * dt + (-omg_xi * self.ny) * np.sqrt(dt)
+                        self.ny += (omg * self.nx) * dt + (omg_xi * self.nx) * np.sqrt(dt)                   
                 else:
                     vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
                     self.rx += (self.v*self.tx + vex) * dt
@@ -386,21 +399,39 @@ class Swimmer:
                     self.tx += (-omg * self.ty) * dt
                     self.ty += (omg * self.tx) * dt
                     self.nx += (-omg * self.ny) * dt
-                    self.ny += (omg * self.nx) * dt
+                    self.ny += (omg * self.nx) * dt                           
 
             else:
                 self.kappa,self.tau = target
                 kappa = self.kappa
                 tau = self.tau
                 if not self.vel_field:
-                    F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
-                    A = np.matrix([[0, -kappa * self.v, 0, self.v], [kappa * self.v, 0, -tau * self.v, 0], [0, tau * self.v, 0, 0], [0, 0, 0, 0]])
+                    if self.sigma_kappa<=0 and self.sigma_tau<=0:
+                        F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
+                        A = np.matrix([[0, -kappa * self.v, 0, self.v], [kappa * self.v, 0, -tau * self.v, 0], [0, tau * self.v, 0, 0], [0, 0, 0, 0]])
 
-                    F = F * matrixexp(A * dt)
-                    self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
-                    self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
-                    self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
-                    self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
+                        F = F * matrixexp(A * dt)
+                        self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
+                        self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
+                        self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
+                        self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
+                    else:
+                        Tv = np.array([self.tx,self.ty,self.tz])
+                        Nv = np.array([self.nx,self.ny,self.nz])
+                        Bv = np.array([self.bx,self.by,self.bz])
+                        self.rx += (self.v*self.tx) * dt
+                        self.ry += (self.v*self.ty) * dt
+                        self.rz += (self.v*self.tz) * dt
+                        Omg = self.v * (tau * Tv + kappa * Bv)
+                        kappa_xi = random.normal(scale=self.sigma_kappa)
+                        tau_xi = random.normal(scale=self.sigma_tau)
+                        Omg_xi = self.v * (tau_xi * Tv + kappa_xi * Bv)
+                        Tv += np.cross(Omg,Tv) * dt + np.cross(Omg_xi,Tv) * np.sqrt(dt)
+                        Nv += np.cross(Omg,Nv) * dt + np.cross(Omg_xi,Nv) * np.sqrt(dt)
+                        Bv += np.cross(Omg,Bv) * dt + np.cross(Omg_xi,Bv) * np.sqrt(dt)
+                        self.tx,self.ty,self.tz = Tv
+                        self.nx,self.ny,self.nz = Nv
+                        self.bx,self.by,self.bz = Bv                        
                 else:
                     Tv = np.array([self.tx,self.ty,self.tz])
                     Nv = np.array([self.nx,self.ny,self.nz])
