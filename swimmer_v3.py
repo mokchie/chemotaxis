@@ -43,7 +43,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=10):
+    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=10,dump_action_seq=False):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -98,6 +98,7 @@ class Swimmer:
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         self.actionAll = actionAll
+        self.dump_action_seq =dump_action_seq
         if self.dim==2:
             self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             self.kappa = self.actions[int(self.kn/2)]
@@ -144,7 +145,8 @@ class Swimmer:
             self.kappa, self.tau = self.actions[int(len(self.actions) / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
-            self.fa = open('data/%s-actions-epoch-%d.data' % (self.sname, self.epch), 'w')
+            if self.dump_action_seq:
+                self.fa = open('data/%s-actions-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
         if not self.rand:
             self.rx = self.rx0
@@ -228,7 +230,8 @@ class Swimmer:
             self.kappa,self.tau = self.actions[int(len(self.actions) / 2)]
         if self.epch%self.dump_freq==0:
             self.fp = open('data/%s-epoch-%d.data' % (self.sname, self.epch), 'w')
-            self.fa = open('data/%s-actions-epoch-%d.data' % (self.sname, self.epch), 'w')
+            if self.dump_action_seq:
+                self.fa = open('data/%s-actions-epoch-%d.data' % (self.sname, self.epch), 'w')
         self.t = self.t0
         self.rx = swimmerc.rx
         self.ry = swimmerc.ry
@@ -350,8 +353,17 @@ class Swimmer:
             return np.array(T),np.array(X),np.array(Y),np.array(Z)
             
     def step(self, states, action_label):
-        if self.epch % self.dump_freq == 0:
-            self.fa.write(' '.join(map(str,states)) + ' ' + str(action_label) + '\n')
+        if self.epch % self.dump_freq == 0 and self.dump_action_seq:
+            #self.fa.write(' '.join(map(str,states)) + ' ' + str(action_label) + '\n')
+            if self.dim==2:
+                rox = self.rx+self.nx/self.kappa
+                roy = self.ry+self.ny/self.kappa
+                self.fa.write(f'{self.rx} {self.ry} {rox} {roy} {action_label}\n')
+            else:
+                rox = self.rx+self.nx/self.kappa
+                roy = self.ry+self.ny/self.kappa
+                roz = self.rz+self.nz/self.kappa
+                self.fa.write(f'{self.rx} {self.ry} {self.rz} {rox} {roy} {roz} {action_label}\n')
         if self.dim == 2:
             omega = self.v0*self.k0
         else:
@@ -360,7 +372,7 @@ class Swimmer:
             ntimes = int(self.Taction * 2 * np.pi / omega / self.dt)
             dt = self.Taction * 2 * np.pi / omega / ntimes
         else: #-2: tumble
-            fraction = random.uniform(self.Taction*0.5,self.Taction*1.5)
+            fraction = random.uniform(0,1)#self.Taction*0.5,self.Taction*1.5)
             ntimes = max(int(fraction * 2 * np.pi / omega / self.dt),1)
             dt = fraction * 2 * np.pi / omega / ntimes
         previous_states = deepcopy(states[0:-self.lstate])
@@ -440,13 +452,15 @@ class Swimmer:
                 self.done = True
                 if self.epch%self.dump_freq==0:
                     self.fp.close()
-                    self.fa.close()
+                    if self.dump_action_seq:
+                        self.fa.close()
                 break
             elif self.t > self.lifespan:
                 self.done = True
                 if self.epch%self.dump_freq==0:
                     self.fp.close()
-                    self.fa.close()
+                    if self.dump_action_seq:
+                        self.fa.close()
                 break
             else:
                 self.done = False

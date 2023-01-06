@@ -30,14 +30,15 @@ swimmer = Swimmer(dim=2,
                   rand=True,
                   dump_freq=20,
                   saving_interval_dt=10,
-                  actionAll=False)
+                  actionAll=False,
+                  dump_action_seq=True)
 
 agent = DQN(swimmer,
-            epochs=400,
+            epochs=1600,
             batch_size=128,
             gamma=0.9,
             epsilon_min=0.1,
-            epsilon_decay=0.99,
+            epsilon_decay=0.998,
             N_neurons=24,
             N_hidden=3,
             )

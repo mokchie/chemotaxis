@@ -10,11 +10,11 @@ direct = "data"
 colors1 = ['C0','C1']
 colors2 = ['C2','C3']
 for cn,state_size in enumerate([2, 4]):
-    XI = np.array([0.0,0.02,0.04,0.06,0.08,0.1,0.12,0.14,0.16,0.18,0.2])
+    Sigma = np.array([0.0,0.02,0.04,0.06,0.08,0.1])
     DeltaC = []
     DeltaCErr = []
-    for xi in XI:
-        sname = 'test-n%s-xi%s'%(state_size,xi)
+    for sigma in Sigma:
+        sname = 'test-n%s-sigma%s'%(state_size,sigma)
         #pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
         pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
         pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")
@@ -87,10 +87,10 @@ for cn,state_size in enumerate([2, 4]):
     DeltaCErr = np.array(DeltaCErr)
     width = 0.003
     error_params = dict(elinewidth=1,ecolor='k',capsize=1)
-    Xe = XI
+    Xe = Sigma
     ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='$greedy, N_T=%s$'%state_size)
     ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='$DRL, N_T=%s$'%state_size)
-    tick_label = [r'$%s$'%xi for xi in XI]
+    tick_label = [r'$%s$'%sigma for sigma in Sigma]
     plt.xticks(Xe,tick_label)
 #ax2.set_xlabel(r'$i$')
 ax2.set_ylabel(r'$\Delta c/c_k$')

@@ -10,8 +10,8 @@ import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
 for state_size in [2,4]:
-    for xi in [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14,0.16, 0.18, 0.2]:
-        sname = 'test-n%s-xi%s' % (state_size, xi)
+    for sigma in [ 0.02, 0.04, 0.06, 0.08, 0.1]:
+        sname = 'test-n%s-sigma%s' % (state_size, sigma)
         loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
         clear(sname+'-greedy')
         clear(sname+'-DRL')
@@ -37,7 +37,9 @@ for state_size in [2,4]:
                           Regg=1.0,
                           saving_interval_dt=10,
                           actionAll=False,
-                          xi_noise=xi)
+                          sigma_kappa=sigma,
+                          sigma_tau=sigma)
+
         test_swimmer3 = Swimmer(dim=3,
                           v0=2,
                           k0=6.5, kw=2.0, kn=2,
@@ -59,7 +61,8 @@ for state_size in [2,4]:
                           Regg=1.0,
                           saving_interval_dt=10,
                           actionAll=False,
-                          xi_noise=xi)
+                          sigma_kappa=sigma,
+                          sigma_tau=sigma)
         agent2 = DQN(test_swimmer2, epochs=100, batch_size=128)
         agent3 = DQN(test_swimmer3, epochs=100, batch_size=128)
         scores2 = []

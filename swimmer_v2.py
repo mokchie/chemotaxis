@@ -100,8 +100,8 @@ class Swimmer:
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         self.actionAll = actionAll
-        self.sigma_kappa = sigma_kappa
-        self.sigma_tau = sigma_tau
+        self.sigma_kappa = sigma_kappa * self.k0
+        self.sigma_tau = sigma_tau * self.tau0
         if self.dim==2:
             self.actions = list(np.linspace(k0-kw/2,k0+kw/2,self.kn))
             self.kappa = self.actions[int(self.kn/2)]
@@ -385,7 +385,7 @@ class Swimmer:
                         self.rx += (self.v*self.tx) * dt
                         self.ry += (self.v*self.ty) * dt
                         omg = self.v*kappa
-                        kappa_xi = random.normal(scale=self.sigma_kappa)
+                        kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
                         omg_xi = self.v*kappa_xi
                         self.tx += (-omg * self.ty) * dt + (-omg_xi * self.ty) * np.sqrt(dt)
                         self.ty += (omg * self.tx) * dt + (omg_xi * self.tx) * np.sqrt(dt)
@@ -419,12 +419,14 @@ class Swimmer:
                         Tv = np.array([self.tx,self.ty,self.tz])
                         Nv = np.array([self.nx,self.ny,self.nz])
                         Bv = np.array([self.bx,self.by,self.bz])
+                        print(np.dot(Tv,Bv))
+                        #pdb.set_trace()
                         self.rx += (self.v*self.tx) * dt
                         self.ry += (self.v*self.ty) * dt
                         self.rz += (self.v*self.tz) * dt
                         Omg = self.v * (tau * Tv + kappa * Bv)
-                        kappa_xi = random.normal(scale=self.sigma_kappa)
-                        tau_xi = random.normal(scale=self.sigma_tau)
+                        kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
+                        tau_xi = random.gauss(mu=0,sigma=self.sigma_tau)
                         Omg_xi = self.v * (tau_xi * Tv + kappa_xi * Bv)
                         Tv += np.cross(Omg,Tv) * dt + np.cross(Omg_xi,Tv) * np.sqrt(dt)
                         Nv += np.cross(Omg,Nv) * dt + np.cross(Omg_xi,Nv) * np.sqrt(dt)

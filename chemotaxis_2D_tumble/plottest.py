@@ -10,12 +10,12 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if not path in sys.path:
     sys.path.insert(1, path)
 del path
-from swimmer_v2 import *
+from swimmer_v3 import *
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 fig1,ax1 = plt.subplots(1,1)
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n2-sigma0.04-DRL-epoch-([0-9]+).data$")
+pattern = re.compile("test-n4-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
@@ -42,7 +42,7 @@ for epch, filename in files:
             #                ax.scatter([x,],[y,],c='r',s=5)
             X.append(rx)
             Y.append(ry)
-    if epch % 1 == 0:
+    if epch % 4 == 0:
         X = np.array(X)
         Y = np.array(Y)
         x0 = 0#X[0]

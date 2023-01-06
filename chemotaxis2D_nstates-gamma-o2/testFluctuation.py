@@ -6,20 +6,20 @@ if not path in sys.path:
     sys.path.insert(1, path)
 del path
 from swimmer_v2 import *
-import copy
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
 for state_size in [2,4]:
-    for xi in [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14,0.16, 0.18, 0.2]:
-        sname = 'test-n%s-xi%s' % (state_size, xi)
+    for sigma in [0.0,0.02,0.04,0.06,0.08,0.1]:
+        sname = 'test-n%s-sigma%s'%(state_size,sigma)
         loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
         clear(sname+'-greedy')
         clear(sname+'-DRL')
-        conc_field = Conc_field(c0=200,k=1)
-        test_swimmer2 = Swimmer(dim=3,
+        conc_field = Conc_field(c0=20,k=1)
+
+        test_swimmer2 = Swimmer(dim=2,
                           v0=2,
                           k0=6.5, kw=2.0, kn=2,
-                          tau0=6.7, tauw=2.0, taun=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,
                           tx0=1, ty0=0, tz0=0,
@@ -28,20 +28,20 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-greedy',
-                          xb=[40,50],yb=[40,50],zb=[40,50],
+                          xb=[40,50],yb=[40,50],
                           rand=True,
                           dump_freq=1,
                           Regg=1.0,
-                          saving_interval_dt=10,
                           actionAll=False,
-                          xi_noise=xi)
-        test_swimmer3 = Swimmer(dim=3,
+                          saving_interval_dt=10,
+                          sigma_kappa=sigma)
+
+        test_swimmer3 = Swimmer(dim=2,
                           v0=2,
                           k0=6.5, kw=2.0, kn=2,
-                          tau0=6.7, tauw=2.0, taun=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,
                           tx0=1, ty0=0, tz0=0,
@@ -50,18 +50,20 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-DRL',
-                          xb=[40,50],yb=[40,50],zb=[40,50],
+                          xb=[40,50],yb=[40,50],
                           rand=True,
                           dump_freq=1,
                           Regg=1.0,
-                          saving_interval_dt=10,
                           actionAll=False,
-                          xi_noise=xi)
+                          saving_interval_dt=10,
+                          sigma_kappa=sigma)
+
         agent2 = DQN(test_swimmer2, epochs=100, batch_size=128)
         agent3 = DQN(test_swimmer3, epochs=100, batch_size=128)
+        scores1 = []
         scores2 = []
         scores3 = []
 

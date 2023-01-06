@@ -9,8 +9,8 @@ from swimmer_v2 import *
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
-state_size = 4
-for xi in [0.0,0.02,0.04,0.06,0.08,0.1]:
+state_size = 2
+for xi in [0.12,0.14,0.16,0.18,0.2]:
     sname = 'test-n%s-xi%s'%(state_size,xi)
     loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
     clear(sname+'-greedy')

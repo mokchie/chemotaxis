@@ -10,7 +10,7 @@ direct = "data"
 colors1 = ['C0','C1']
 colors2 = ['C2','C3']
 for cn,state_size in enumerate([2, 4]):
-    XI = np.array([0.0,0.02,0.04,0.06,0.08,0.1])
+    XI = np.array([0.0,0.02,0.04,0.06,0.08,0.1,0.12,0.14,0.16,0.18,0.2])
     DeltaC = []
     DeltaCErr = []
     for xi in XI:
@@ -96,10 +96,11 @@ for cn,state_size in enumerate([2, 4]):
     Xe = XI
     ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='$greedy, N_T=%s$'%state_size)
     ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='$DRL, N_T=%s$'%state_size)
-    tick_label = [r'$\xi=%s$'%xi for xi in XI]
+    tick_label = [r'$%s$'%xi for xi in XI]
     plt.xticks(Xe,tick_label)
 #ax2.set_xlabel(r'$i$')
 ax2.set_ylabel(r'$\Delta c/c_k$')
 #ax3.set_ylim((10,30))
+ax2.set_xlabel(r'$\xi$')
 ax2.legend(loc='best',ncol=2)
 plt.show()
