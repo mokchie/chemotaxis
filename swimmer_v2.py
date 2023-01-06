@@ -370,85 +370,56 @@ class Swimmer:
                 self.kappa = target
                 kappa = self.kappa
                 if not self.vel_field:
-                    if self.sigma_kappa<=0:
-                        F = np.matrix([[self.tx,self.nx,self.rx],
-                                       [self.ty,self.ny,self.ry],
-                                       [0,0,1]])
-                        A = np.matrix([[0,-kappa*self.v,self.v],
-                                       [kappa*self.v,0,0],
-                                       [0,0,0]])
-                        
-                        F = F * matrixexp(A * dt)
-
-                        self.rx, self.ry, self.tx, self.ty, self.nx, self.ny = F[0,2],F[1,2],F[0,0],F[1,0],F[0,1],F[1,1]
-                    else:
-                        self.rx += (self.v*self.tx) * dt
-                        self.ry += (self.v*self.ty) * dt
-                        omg = self.v*kappa
-                        kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
-                        omg_xi = self.v*kappa_xi
-                        self.tx += (-omg * self.ty) * dt + (-omg_xi * self.ty) * np.sqrt(dt)
-                        self.ty += (omg * self.tx) * dt + (omg_xi * self.tx) * np.sqrt(dt)
-                        self.nx += (-omg * self.ny) * dt + (-omg_xi * self.ny) * np.sqrt(dt)
-                        self.ny += (omg * self.nx) * dt + (omg_xi * self.nx) * np.sqrt(dt)                   
+                    self.rx += (self.v*self.tx) * dt
+                    self.ry += (self.v*self.ty) * dt
                 else:
                     vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
                     self.rx += (self.v*self.tx + vex) * dt
                     self.ry += (self.v*self.ty + vey) * dt
-                    omg = self.v*kappa
-                    self.tx += (-omg * self.ty) * dt
-                    self.ty += (omg * self.tx) * dt
-                    self.nx += (-omg * self.ny) * dt
-                    self.ny += (omg * self.nx) * dt                           
-
+                omg = self.v*kappa
+                if self.sigma_kappa>0:
+                    kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
+                    omg_xi = self.v*kappa_xi
+                else:
+                    omg_xi = 0
+                dtheta = omg*dt + omg_xi*np.sqrt(dt)
+                self.tx = np.cos(dtheta) * self.tx - np.sin(dtheta) * self.ty
+                self.ty = np.cos(dtheta) * self.ty + np.sin(dtheta) * self.tx
+                self.nx = np.cos(dtheta) * self.nx - np.sin(dtheta) * self.ny
+                self.ny = np.cos(dtheta) * self.ny + np.sin(dtheta) * self.nx
             else:
                 self.kappa,self.tau = target
                 kappa = self.kappa
                 tau = self.tau
                 if not self.vel_field:
-                    if self.sigma_kappa<=0 and self.sigma_tau<=0:
-                        F = np.matrix([[self.tx, self.nx, self.bx, self.rx], [self.ty, self.ny, self.by, self.ry], [self.tz, self.nz, self.bz,  self.rz], [0, 0, 0, 1]])
-                        A = np.matrix([[0, -kappa * self.v, 0, self.v], [kappa * self.v, 0, -tau * self.v, 0], [0, tau * self.v, 0, 0], [0, 0, 0, 0]])
-
-                        F = F * matrixexp(A * dt)
-                        self.rx, self.ry, self.rz = F[0, 3], F[1, 3], F[2, 3]
-                        self.bx, self.by, self.bz = F[0, 2], F[1, 2], F[2, 2]
-                        self.tx, self.ty, self.tz = F[0, 0], F[1, 0], F[2, 0]
-                        self.nx, self.ny, self.nz = F[0, 1], F[1, 1], F[2, 1]
-                    else:
-                        Tv = np.array([self.tx,self.ty,self.tz])
-                        Nv = np.array([self.nx,self.ny,self.nz])
-                        Bv = np.array([self.bx,self.by,self.bz])
-                        print(np.dot(Tv,Bv))
-                        #pdb.set_trace()
-                        self.rx += (self.v*self.tx) * dt
-                        self.ry += (self.v*self.ty) * dt
-                        self.rz += (self.v*self.tz) * dt
-                        Omg = self.v * (tau * Tv + kappa * Bv)
-                        kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
-                        tau_xi = random.gauss(mu=0,sigma=self.sigma_tau)
-                        Omg_xi = self.v * (tau_xi * Tv + kappa_xi * Bv)
-                        Tv += np.cross(Omg,Tv) * dt + np.cross(Omg_xi,Tv) * np.sqrt(dt)
-                        Nv += np.cross(Omg,Nv) * dt + np.cross(Omg_xi,Nv) * np.sqrt(dt)
-                        Bv += np.cross(Omg,Bv) * dt + np.cross(Omg_xi,Bv) * np.sqrt(dt)
-                        self.tx,self.ty,self.tz = Tv
-                        self.nx,self.ny,self.nz = Nv
-                        self.bx,self.by,self.bz = Bv                        
+                    self.rx += (self.v*self.tx) * dt
+                    self.ry += (self.v*self.ty) * dt
+                    self.rz += (self.v*self.tz) * dt
                 else:
-                    Tv = np.array([self.tx,self.ty,self.tz])
-                    Nv = np.array([self.nx,self.ny,self.nz])
-                    Bv = np.array([self.bx,self.by,self.bz])
                     vex,vey,vez = self.vel_field(self.rx,self.ry,self.rz)
                     self.rx += (self.v*self.tx + vex) * dt
                     self.ry += (self.v*self.ty + vey) * dt
                     self.rz += (self.v*self.tz + vey) * dt
-                    Omg = self.v * (tau * Tv + kappa * Bv)
-                    Tv += np.cross(Omg,Tv) * dt
-                    Nv += np.cross(Omg,Nv) * dt
-                    Bv += np.cross(Omg,Bv) * dt
-                    self.tx,self.ty,self.tz = Tv
-                    self.nx,self.ny,self.nz = Nv
-                    self.bx,self.by,self.bz = Bv
+
+                Tv = np.array([self.tx,self.ty,self.tz])
+                Nv = np.array([self.nx,self.ny,self.nz])
+                Bv = np.array([self.bx,self.by,self.bz])
+                Omg = self.v * (tau * Tv + kappa * Bv)
+                if self.sigma_kappa>0 or self.sigma_tau>0:
+                    kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
+                    tau_xi = random.gauss(mu=0,sigma=self.sigma_tau)
+                    Omg_xi = self.v * (tau_xi * Tv + kappa_xi * Bv)
+                else:
+                    Omg_xi = 0
+                Rot = Omg*dt+Omg_xi*np.sqrt(dt)
+                dtheta = np.linalg.norm(Rot)
+                e_rot = Rot/dtheta
+                Tv = Tv*np.cos(dtheta) + np.cross(e_rot,Tv)*np.sin(dtheta) + np.dot(e_rot,Tv)*(1-np.cos(dtheta)) * e_rot
+                Nv = Nv*np.cos(dtheta) + np.cross(e_rot,Nv)*np.sin(dtheta) + np.dot(e_rot,Nv)*(1-np.cos(dtheta)) * e_rot
+                Bv = Bv*np.cos(dtheta) + np.cross(e_rot,Bv)*np.sin(dtheta) + np.dot(e_rot,Bv)*(1-np.cos(dtheta)) * e_rot
+                self.tx,self.ty,self.tz = Tv
+                self.nx,self.ny,self.nz = Nv
+                self.bx,self.by,self.bz = Bv
 
             self.t += dt
             if self.epch%self.dump_freq==0 and i%self.saving_interval_dt==0:
