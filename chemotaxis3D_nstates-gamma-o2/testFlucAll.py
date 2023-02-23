@@ -10,7 +10,7 @@ import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
 for state_size in [2,4]:
-    for sigma in [ 0.02, 0.04, 0.06, 0.08, 0.1]:
+    for sigma in [0.0, 0.02, 0.04, 0.06, 0.08, 0.1]:
         sname = 'test-n%s-sigma%s' % (state_size, sigma)
         loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
         clear(sname+'-greedy')
@@ -68,7 +68,7 @@ for state_size in [2,4]:
         scores2 = []
         scores3 = []
 
-        for i in range(40):
+        for i in range(100):
             print('test',i)
             state2 = test_swimmer2.reset()
             done2 = False

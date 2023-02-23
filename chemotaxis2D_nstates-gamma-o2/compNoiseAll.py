@@ -96,5 +96,5 @@ for cn,state_size in enumerate([2, 4]):
 ax2.set_ylabel(r'$\Delta c/c_k$')
 ax2.set_xlabel(r'$\xi$')
 #ax3.set_ylim((10,30))
-ax2.legend(loc='best',ncol=2)
+ax2.legend(loc='lower center',ncol=2)
 plt.show()

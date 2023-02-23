@@ -65,7 +65,7 @@ for state_size in [2,4]:
         scores2 = []
         scores3 = []
 
-        for i in range(40):
+        for i in range(100):
             print('test',i)
             state2 = test_swimmer2.reset()
             done2 = False

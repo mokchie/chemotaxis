@@ -16,7 +16,7 @@ cmap = cm.get_cmap('jet')
 fig1 = plt.figure()
 ax1 = plt.axes(projection='3d')
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n4-epoch-([0-9]+).data$")
+pattern = re.compile("test-n4-sigma0.02-DRL-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
