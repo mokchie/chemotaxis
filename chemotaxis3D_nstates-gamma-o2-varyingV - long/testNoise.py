@@ -9,7 +9,7 @@ from swimmer_v2 import *
 import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
-for state_size in [2,]:
+for state_size in [2,4]:
     #for xi in [0.0, 0.02, 0.04, 0.06, 0.08, 0.1]:
     for xi in [0.0,0.04,0.08,0.12,0.16,0.2]:
         sname = 'test-n%s-xi%s' % (state_size, xi)

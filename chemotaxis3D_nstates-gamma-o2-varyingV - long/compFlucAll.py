@@ -10,11 +10,11 @@ direct = "data"
 colors1 = ['C0','C1']
 colors2 = ['C2','C3']
 for cn,state_size in enumerate([2, 4]):
-    Epsilon = np.array([0.0,0.1,0.2])
+    Sigma = np.array([0.0,0.02,0.04,0.06,0.08,0.1])
     DeltaC = []
     DeltaCErr = []
-    for epsilon in Epsilon:
-        sname = 'test-n%s-epsilon%s'%(state_size,epsilon)
+    for sigma in Sigma:
+        sname = 'test-n%s-sigma%s'%(state_size,sigma)
         #pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
         pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
         pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")
@@ -48,17 +48,6 @@ for cn,state_size in enumerate([2, 4]):
         R3 = []
         files = sorted(zip(epochs2, filenames2, epochs3, filenames3))
         for epch2, filename2, epch3, filename3 in files:
-            # X1 = []
-            # Y1 = []
-            # Z1 = []
-            # with open(direct+'/'+filename1) as fp1:
-            #     for line in fp1:
-            #         t, x, y, z, tx, ty, tz, nx, ny, nz, bx, by, bz, kappa, tau = [float(item) for item in line.strip().split()]
-            #         #            if int(np.round(t/0.01))%20==0:
-            #         #                ax.scatter([x,],[y,],c='r',s=5)
-            #         X1.append(x)
-            #         Y1.append(y)
-            #         Z1.append(z)
             X2 = []
             Y2 = []
             Z2 = []
@@ -74,7 +63,6 @@ for cn,state_size in enumerate([2, 4]):
             X3 = []
             Y3 = []
             Z3 = []
-
             with open(direct+'/'+filename3) as fp3:
                 for line in fp3:
                     t, x, y, z, tx, ty, tz, nx, ny, nz, bx, by, bz, kappa, tau = [float(item) for item in line.strip().split()]
@@ -84,9 +72,6 @@ for cn,state_size in enumerate([2, 4]):
                     Y3.append(y)
                     Z3.append(z)
             if epch2 % 1 == 0:
-                # X1 = np.array(X1)
-                # Y1 = np.array(Y1)
-                # Z1 = np.array(Z1)
                 X2 = np.array(X2)
                 Y2 = np.array(Y2)
                 Z2 = np.array(Z2)
@@ -105,15 +90,15 @@ for cn,state_size in enumerate([2, 4]):
 # ax.scatter([0,],[0,],s=10,c='r')
     DeltaC = np.array(DeltaC)
     DeltaCErr = np.array(DeltaCErr)
-    width = 0.01
+    width = 0.003
     error_params = dict(elinewidth=1,ecolor='k',capsize=1)
-    Xe = Epsilon
+    Xe = Sigma
     ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='$greedy, N_T=%s$'%state_size)
     ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='$DRL, N_T=%s$'%state_size)
-    tick_label = [r'$\epsilon=%s$' % eps for eps in Epsilon]
+    tick_label = [r'$%s$'%xi for xi in Sigma]
     plt.xticks(Xe,tick_label)
 #ax2.set_xlabel(r'$i$')
 ax2.set_ylabel(r'$\Delta c/c_k$')
-#ax3.set_ylim((10,30))
+ax2.set_xlabel(r'$\sigma$')
 ax2.legend(loc='best',ncol=2)
 plt.show()

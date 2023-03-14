@@ -551,6 +551,27 @@ class DQN():
     def choose_rand_action(self):
         return self.env.action_space_sample()
 
+    # def greedy_action(self,states):
+    #     ss = self.env.preprocess(states)
+    #     nmax = np.argmax(ss[0::self.env.lstate])
+    #     nmin = np.argmin(ss[0::self.env.lstate])
+    #     #pdb.set_trace()
+    #     if nmax == 0:
+    #         if self.env.dim == 2:
+    #             return -1
+    #         else:
+    #             return 0
+    #     elif nmin == 0:
+    #         if self.env.dim == 2:
+    #             return 0
+    #         else:
+    #             return -1
+    #     else:
+    #         if self.env.dim == 2:
+    #             return self.env.actions.index(states[1])
+    #         else:
+    #             return self.env.actions.index((states[1],states[2]))
+
     def greedy_action(self,states):
         ss = self.env.preprocess(states)
         nmax = np.argmax(ss[0::self.env.lstate])
@@ -558,19 +579,20 @@ class DQN():
         #pdb.set_trace()
         if nmax == 0:
             if self.env.dim == 2:
-                return -1
+                return np.argmax(self.env.actions)
             else:
-                return 0
+                return np.argmin([kappa/(kappa**2+tau**2) for kappa,tau in self.env.actions])
         elif nmin == 0:
             if self.env.dim == 2:
-                return 0
+                return np.argmin(self.env.actions)
             else:
-                return -1
+                return np.argmax([kappa / (kappa ** 2 + tau ** 2) for kappa, tau in self.env.actions])
         else:
             if self.env.dim == 2:
                 return self.env.actions.index(states[1])
             else:
                 return self.env.actions.index((states[1],states[2]))
+
     def swing_action(self,states):
         if self.env.dim == 2:
             return self.env.action_size - self.env.actions.index(states[1]) - 1
