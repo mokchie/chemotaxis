@@ -54,10 +54,7 @@ class Swimmer:
         self.tauw = tauw
         self.taun = taun
         self.dim = dim
-        if self.dim == 2:
-            self.lstate = 2
-        else:
-            self.lstate = 3
+        self.lstate = 2
         self.dt = dt
         self.Taction = Taction
         self.t = t0
@@ -217,10 +214,7 @@ class Swimmer:
         else:
             c = self.get_conc(self.rx, self.ry, self.rz)
         self.memc.append(c)
-        if self.dim == 2:
-            states = np.array([c,self.kappa] * self.state_size)
-        else:
-            states = np.array([c, self.kappa, self.tau] * self.state_size)
+        states = np.array([c,self.kappa] * self.state_size)
         return states
     def reset_copy(self,swimmerc):
         self.v = self.vs[int(len(self.vs) / 2)]
@@ -258,112 +252,8 @@ class Swimmer:
         else:
             c = self.get_conc(self.rx, self.ry, self.rz)
         self.memc.append(c)
-        if self.dim == 2:
-            states = np.array([c,self.kappa] * self.state_size)
-        else:
-            states = np.array([c, self.kappa, self.tau] * self.state_size)
+        states = np.array([c,self.kappa] * self.state_size)
         return states
-    def spermtrj(self,mu,rho,sname=None):
-        '''this sperm trj only works in 3D.'''
-        T = [0,]
-        X = [self.rx0,]
-        Y = [self.ry0,]
-        Z = [self.rz0,]
-        rx = self.rx0
-        ry = self.ry0
-        rz = self.rz0
-        tx = self.tx0
-        ty = self.ty0
-        tz = self.tz0
-        nx = self.nx0
-        ny = self.ny0
-        nz = self.nz0
-        bx = self.bx0
-        by = self.by0
-        bz = self.bz0
-
-        a = 1
-        if self.dim == 2:
-            p = 1/self.get_conc(rx, ry)
-        else:
-            p = 1/self.get_conc(rx, ry, rz)
-        t = 0
-        while t<=self.lifespan:
-            t+=self.dt
-            a0 = a
-            p0 = p
-            s = self.get_conc(rx,ry,rz)
-            if self.dim == 2:
-                kappa = self.k0-rho*self.k0*(a0-1)
-                if not self.vel_field:
-                    rx += (self.v*tx) * self.dt
-                    ry += (self.v*ty) * self.dt
-                else:
-                    vex,vey,vez = self.vel_field(rx,ry,rz)
-                    rx += (self.v*tx + vex) * self.dt
-                    ry += (self.v*ty + vey) * self.dt
-                omg = self.v*kappa
-                if self.sigma_kappa>0:
-                    kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
-                    omg_xi = self.v*kappa_xi
-                else:
-                    omg_xi = 0
-                dtheta = omg*self.dt + omg_xi*np.sqrt(self.dt)
-                ntx = np.cos(dtheta) * tx - np.sin(dtheta) * ty
-                nty = np.cos(dtheta) * ty + np.sin(dtheta) * tx
-                nnx = np.cos(dtheta) * nx - np.sin(dtheta) * ny
-                nny = np.cos(dtheta) * ny + np.sin(dtheta) * nx
-                tx = ntx
-                ty = nty
-                nx = nnx
-                ny = nny
-            else:
-                kappa = self.k0-rho*self.k0*(a0-1)                
-                tau = self.tau0+rho*self.tau0*(a0-1)
-                if not self.vel_field:
-                    rx += (self.v*tx) * self.dt
-                    ry += (self.v*ty) * self.dt
-                    rz += (self.v*tz) * self.dt
-                else:
-                    vex,vey,vez = self.vel_field(rx,ry,rz)
-                    rx += (self.v*tx + vex) * self.dt
-                    ry += (self.v*ty + vey) * self.dt
-                    rz += (self.v*tz + vey) * self.dt
-
-                Tv = np.array([tx,ty,tz])
-                Nv = np.array([nx,ny,nz])
-                Bv = np.array([bx,by,bz])
-                Omg = self.v * (tau * Tv + kappa * Bv)
-                if self.sigma_kappa>0 or self.sigma_tau>0:
-                    kappa_xi = random.gauss(mu=0,sigma=self.sigma_kappa)
-                    tau_xi = random.gauss(mu=0,sigma=self.sigma_tau)
-                    Omg_xi = self.v * (tau_xi * Tv + kappa_xi * Bv)
-                else:
-                    Omg_xi = 0
-                Rot = Omg*self.dt+Omg_xi*np.sqrt(self.dt)
-                dtheta = np.linalg.norm(Rot)
-                e_rot = Rot/dtheta
-                Tv = Tv*np.cos(dtheta) + np.cross(e_rot,Tv)*np.sin(dtheta) + np.dot(e_rot,Tv)*(1-np.cos(dtheta)) * e_rot
-                Nv = Nv*np.cos(dtheta) + np.cross(e_rot,Nv)*np.sin(dtheta) + np.dot(e_rot,Nv)*(1-np.cos(dtheta)) * e_rot
-                Bv = Bv*np.cos(dtheta) + np.cross(e_rot,Bv)*np.sin(dtheta) + np.dot(e_rot,Bv)*(1-np.cos(dtheta)) * e_rot
-                tx,ty,tz = Tv
-                nx,ny,nz = Nv
-                bx,by,bz = Bv
-            a = a0 + self.dt*(p0*s-a0)/mu
-            p = p0 + self.dt*p0*(1-a0)/mu
-            T.append(t)
-            X.append(rx)
-            Y.append(ry)
-            Z.append(rz)
-        if sname:
-            with open('data/'+sname+'-trj-%s'%self.epch,'w') as ftrj:
-                for t,rx,ry,rz in zip(T,X,Y,Z):
-                    ftrj.write('%s %s %s %s\n'%(t,rx,ry,rz))
-        if self.dim==2:
-            return np.array(T),np.array(X),np.array(Y)
-        else:
-            return np.array(T),np.array(X),np.array(Y),np.array(Z)
-            
     def step(self, states, target):
         self.v = self.vs[self.actions.index(target)]
         if self.dim == 2:
@@ -479,40 +369,25 @@ class Swimmer:
                 rmax = (self.k0 - self.kw / 2) / ((self.k0 - self.kw / 2) ** 2 + (self.tau0 + self.tauw / 2) ** 2)
             reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
         #pdb.set_trace()
-        if self.dim == 2:
-            return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
-        else:
-            return [np.concatenate((np.array([c, self.kappa, self.tau]), previous_states)), reward, self.done, {}]
+        return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
 
 
     def action_space_sample(self):
         return random.randrange(self.action_size)
     def preprocess(self,states):
         states_out = []
-        if self.dim == 2:
-            sa1 = np.average(states[0::self.lstate])
-            sa2 = self.k0
-            for i,s in enumerate(states):
-                if i%self.lstate==0:
-                    states_out.append((s-sa1)*self.k0/self.conc_field.k)
-                else:
-                    states_out.append((s-sa2)/(self.kw/2))
-        else:
-            sa1 = np.average(states[0::self.lstate])
-            sa2 = self.k0
-            sa3 = self.tau0
-            for i,s in enumerate(states):
-                if i%self.lstate==0:
-                    states_out.append((s-sa1)*self.k0/self.conc_field.k)
-                elif (i-1)%self.lstate==0:
-                    states_out.append((s-sa2)/(self.kw/2))
-                else:
-                    states_out.append((s-sa3)/(self.tauw/2))
+        sa1 = np.average(states[0::self.lstate])
+        sa2 = self.k0
+        for i,s in enumerate(states):
+            if i%self.lstate==0:
+                states_out.append((s-sa1)*self.k0/self.conc_field.k)
+            else:
+                states_out.append((s-sa2)/(self.kw/2))
         return np.array(states_out)
 
 
 class DQN():
-    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98, N_hidden = 3, N_neurons=24):
+    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98, N_hidden = 3, N_neurons=24, DDQN=False, align_freq=25):
         self.memory = deque(maxlen=10000)
         self.env = swimmer
         self.input_size = self.env.state_size*self.env.lstate
@@ -525,20 +400,28 @@ class DQN():
         self.N_hidden = N_hidden
         self.N_neurons = N_neurons
         self.epochs = epochs
-        # self.hist_size = 1
+        self.DDQN = DDQN
+        self.align_freq = align_freq
         alpha = 0.01
         alpha_decay = 0.1
 
+        self.Q_network = self.build_network()
+        self.Q_network.compile(loss='mse', optimizer=Adam(learning_rate=alpha, decay=alpha_decay))
+        if self.DDQN:
+            self.t_network = self.build_network()
         # Init model
-        self.model = Sequential()
-        #        self.model.add(keras.layers.LSTM(16,input_shape=(None,self.input_size)))
-        self.model.add(Dense(self.N_neurons, input_dim=self.input_size, activation='tanh'))
-        #self.model.add(Dropout(0.3))
+    def build_network(self):
+        network = Sequential()
+        #        self.Q_network.add(keras.layers.LSTM(16,input_shape=(None,self.input_size)))
+        network.add(Dense(self.N_neurons, input_dim=self.input_size, activation='tanh'))
+        #self.Q_network.add(Dropout(0.3))
         for j in range(self.N_hidden-1):
-            self.model.add(Dense(self.N_neurons, activation='tanh'))
-        self.model.add(Dense(self.action_size, activation='linear'))
-        self.model.compile(loss='mse', optimizer=Adam(learning_rate=alpha, decay=alpha_decay))
-
+            network.add(Dense(self.N_neurons, activation='tanh'))
+        network.add(Dense(self.action_size, activation='linear'))
+        return network
+    def align_target_network(self):
+        for t,e in zip(self.t_network.trainable_variables,self.Q_network.trainable_variables):
+            t.assign(e)
     def remember(self, states, action, reward, next_states, done):
         self.memory.append((states, action, reward, next_states, done))
 
@@ -546,7 +429,7 @@ class DQN():
         if np.random.random() <= epsilon:
             return self.env.action_space_sample()
         else:
-            return np.argmax(self.model.predict(np.array([self.env.preprocess(states), ])))
+            return np.argmax(self.Q_network.predict(np.array([self.env.preprocess(states), ])))
 
     def choose_rand_action(self):
         return self.env.action_space_sample()
@@ -591,28 +474,31 @@ class DQN():
             if self.env.dim == 2:
                 return self.env.actions.index(states[1])
             else:
-                return self.env.actions.index((states[1],states[2]))
+                kappas = [kappa for kappa,tau in self.env.actions]
+                return kappas.index(states[1])
 
     def swing_action(self,states):
         if self.env.dim == 2:
             return self.env.action_size - self.env.actions.index(states[1]) - 1
         else:
-            return self.env.action_size - self.env.actions.index((states[1],states[2])) - 1
+            kappas = [kappa for kappa, tau in self.env.actions]
+            return self.env.action_size - kappas.index(states[1]) - 1
 
     def replay(self, batch_size):
         x_batch, y_batch = [], []
         minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
         for states, ai, reward, next_states, done in minibatch:
             #pdb.set_trace()
-            y_target = self.model.predict(np.array([self.env.preprocess(states), ]))
-
-            y_target[0][ai] = reward if done else reward + self.gamma * np.max(
-                self.model.predict(np.array([self.env.preprocess(next_states), ]))[0])
+            y_target = self.Q_network.predict(np.array([self.env.preprocess(states), ]))
+            if self.DDQN:
+                next_action = np.argmax(self.Q_network.predict(np.array([self.env.preprocess(next_states), ]))[0])
+                y_target[0][ai] = reward if done else reward + self.gamma * self.t_network.predict(np.array([self.env.preprocess(next_states), ]))[0][next_action]
+            else:
+                y_target[0][ai] = reward if done else reward + self.gamma * np.max(self.Q_network.predict(np.array([self.env.preprocess(next_states), ]))[0])
             # pdb.set_trace()
             x_batch.append(self.env.preprocess(states))
             y_batch.append(y_target[0])
-
-        self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=2)
+        self.Q_network.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=2)
         self.epsilon = max(self.epsilon_min, self.epsilon_decay * self.epsilon)  # decrease epsilon
 
     def train(self,Nstep=0):
@@ -657,6 +543,8 @@ class DQN():
             print(f'tot_reward: {tot_reward} return: {ret_sum} mean_score: {mean_score}' )
             avg_scores.append(mean_score)
             self.replay(self.batch_size)
+            if self.DDQN and (e+1)%self.align_freq==0:
+                self.align_target_network()
         self.frw.close()
         print('Run {} episodes'.format(e))
         return avg_scores

@@ -10,11 +10,11 @@ direct = "data"
 colors1 = ['C0','C1']
 colors2 = ['C2','C3']
 for cn,state_size in enumerate([2, 4]):
-    XI = np.array([0.0,0.02,0.04,0.06,0.08,0.1,0.12,0.14,0.16,0.18,0.2])
+    XI = np.array([0.0,0.04,0.08,0.12,0.16,0.2])
     DeltaC = []
     DeltaCErr = []
     for xi in XI:
-        sname = 'test-n%s-xi%s'%(state_size,xi)
+        sname = 'test-DDQN-n%s-xi%s'%(state_size,xi)
         #pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
         pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
         pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")

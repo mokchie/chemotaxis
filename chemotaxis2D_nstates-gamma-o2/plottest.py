@@ -15,11 +15,11 @@ matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 fig1,ax1 = plt.subplots(1,1)
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n2-sigma0.0-DRL-epoch-([0-9]+).data$")
+pattern = re.compile("test-DDQN-n2-xi0.0-DRL-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
-conc_field = Conc_field(c0=200,k=1)
+conc_field = Conc_field(c0=20,k=1)
 for root, dirs, files in os.walk(direct):
     if root == direct:
         for name in files:

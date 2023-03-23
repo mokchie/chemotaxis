@@ -5,8 +5,7 @@ import re,os
 import numpy as np
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
 state_size = 4
-epsilon = 0.0
-sname = 'test-n%s-epsilon%s'%(state_size,epsilon)
+sname = 'test-DDQN-n%s'%(state_size,)
 cmap = cm.get_cmap('jet')
 fig1, ax1 = plt.subplots(1, 1)
 fig2, ax2 = plt.subplots(1, 1)
@@ -102,10 +101,10 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
 
         Xr3 = np.array(Xr3)
         Yr3 = np.array(Yr3)
-        if epch1%4==0:
-            #ax1.plot(X1, Y1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
-            #ax2.plot(Xr1, Yr1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
-            #ax1.scatter((X1[-1],),(Y1[-1],),s=10,c='k')
+        if epch1%5==0:
+            ax1.plot(X1, Y1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
+            ax2.plot(Xr1, Yr1, '--', color=cmap(epch1 / np.max(epochs1)), linewidth=1)
+            ax1.scatter((X1[-1],),(Y1[-1],),s=10,c='k')
 
             ax1.plot(X2, Y2, '-.', color=cmap(epch2 / np.max(epochs2)), linewidth=1)
             ax2.plot(Xr2, Yr2, '-.', color=cmap(epch2 / np.max(epochs2)), linewidth=1)
@@ -117,13 +116,13 @@ for epch1, filename1, epch2, filename2, epch3, filename3 in files:
 
         R1.append(Y1[-1]-Y1[0])
         R2.append(Y2[-1]-Y2[0])
-        R3.append(Y3[-1] - Y3[0])
-ax3.plot(np.array(range(len(R1)))+1,R1,'o--', color='C1',label='swinging')
-ax3.plot(np.array(range(len(R1)))+1,np.average(R1)+np.zeros_like(R1),'-',color='C1')
-ax3.plot(np.array(range(len(R2)))+1,R2,'v--',color='C2',label='greedy')
-ax3.plot(np.array(range(len(R2)))+1,np.average(R2)+np.zeros_like(R2),'-',color='C2')
-ax3.plot(np.array(range(len(R3)))+1,R3,'v--',color='C3',label='DRL')
-ax3.plot(np.array(range(len(R3)))+1,np.average(R3)+np.zeros_like(R3),'-',color='C3')
+        R3.append(Y3[-1]-Y3[0])
+ax3.plot(np.array(range(len(R1)))+1,R1,'o--', color='C0',label='alternating')
+ax3.plot(np.array(range(len(R1)))+1,np.average(R1)+np.zeros_like(R1),'-',color='C0')
+ax3.plot(np.array(range(len(R2)))+1,R2,'v--',color='C1',label='short-sighted')
+ax3.plot(np.array(range(len(R2)))+1,np.average(R2)+np.zeros_like(R2),'-',color='C1')
+ax3.plot(np.array(range(len(R3)))+1,R3,'v--',color='C2',label='DRL')
+ax3.plot(np.array(range(len(R3)))+1,np.average(R3)+np.zeros_like(R3),'-',color='C2')
 # ax.scatter([0,],[0,],s=10,c='r')
 ax1.set_aspect('equal')
 #ax1.set_xlim((-10,10))
@@ -134,7 +133,11 @@ ax2.set_aspect('equal')
 ax2.set_xlabel('x')
 ax2.set_ylabel('y')
 ax3.set_xlabel(r'$i$')
-ax3.set_ylabel(r'$\Delta c$')
+ax3.set_ylabel(r'$\Delta c/k_c$')
 #ax3.set_ylim((10,30))
-ax3.legend(loc='best')
+if state_size == 2:
+    ax3.legend(loc='upper left',ncol=2)
+else:
+    ax3.legend(loc='center left', ncol=2)
+ax3.set_ylim((-4,17))
 plt.show()

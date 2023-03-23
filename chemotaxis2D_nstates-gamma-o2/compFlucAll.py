@@ -14,7 +14,7 @@ for cn,state_size in enumerate([2, 4]):
     DeltaC = []
     DeltaCErr = []
     for sigma in Sigma:
-        sname = 'test-n%s-sigma%s'%(state_size,sigma)
+        sname = 'test-DDQN-n%s-sigma%s'%(state_size,sigma)
         #pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
         pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
         pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")

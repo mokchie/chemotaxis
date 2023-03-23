@@ -11,14 +11,16 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 epsilon = 0.0
 for state_size in [2,4]:
     for sigma in [0.0,0.02,0.04,0.06,0.08,0.1]:
-        sname = 'test-n%s-sigma%s'%(state_size,sigma)
-        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
+        random.seed(83843)
+        sname = 'test-DDQN-n%s-sigma%s'%(state_size,sigma)
+        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-DDQN-n%s'%state_size)
         clear(sname+'-greedy')
         clear(sname+'-DRL')
         conc_field = Conc_field(c0=20,k=1)
 
         test_swimmer2 = Swimmer(dim=2,
                           v0=2,
+                          vw=0.2,
                           k0=6.5, kw=2.0, kn=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,
@@ -41,6 +43,7 @@ for state_size in [2,4]:
 
         test_swimmer3 = Swimmer(dim=2,
                           v0=2,
+                          vw=0.2,
                           k0=6.5, kw=2.0, kn=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,

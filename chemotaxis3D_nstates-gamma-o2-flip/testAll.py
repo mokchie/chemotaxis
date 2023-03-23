@@ -10,8 +10,9 @@ import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 for state_size in [2,4]:
     for epsilon in [0.0,0.05,0.1,0.15,0.2,0.25,0.3]:
-        sname = 'test-n%s-epsilon%s'%(state_size,epsilon)
-        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
+        random.seed(83843)
+        sname = 'test-DDQN-n%s-epsilon%s'%(state_size,epsilon)
+        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-DDQN-n%s'%state_size)
         clear(sname+'-greedy')
         clear(sname+'-DRL')
         conc_field = Conc_field(c0=200,k=1)
@@ -28,7 +29,7 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-greedy',
                           xb=[40,50],yb=[40,50],zb=[40,50],
@@ -50,7 +51,7 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-DRL',
                           xb=[40,50],yb=[40,50],zb=[40,50],
@@ -64,7 +65,7 @@ for state_size in [2,4]:
         scores2 = []
         scores3 = []
 
-        for i in range(100):
+        for i in range(40):
             print('test',i)
             state2 = test_swimmer2.reset()
             done2 = False

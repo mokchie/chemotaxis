@@ -10,11 +10,11 @@ direct = "data"
 colors1 = ['C0','C1']
 colors2 = ['C2','C3']
 for cn,state_size in enumerate([2, 4]):
-    Epsilon = np.array([0.0,0.1,0.2])
+    Epsilon = np.array([0.0,0.05,0.1,0.15,0.2,0.25,0.3])
     DeltaC = []
     DeltaCErr = []
     for epsilon in Epsilon:
-        sname = 'test-n%s-epsilon%s'%(state_size,epsilon)
+        sname = 'test-DDQN-n%s-epsilon%s'%(state_size,epsilon)
         #pattern1 = re.compile(sname+"-swinging-epoch-([0-9]+).data$")
         pattern2 = re.compile(sname+"-greedy-epoch-([0-9]+).data$")
         pattern3 = re.compile(sname+"-DRL-epoch-([0-9]+).data$")
@@ -85,15 +85,15 @@ for cn,state_size in enumerate([2, 4]):
 # ax.scatter([0,],[0,],s=10,c='r')
     DeltaC = np.array(DeltaC)
     DeltaCErr = np.array(DeltaCErr)
-    width = 0.01
+    width = 0.005
     error_params = dict(elinewidth=1,ecolor='k',capsize=1)
     Xe = Epsilon
     ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='$greedy, N_T=%s$'%state_size)
     ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='$DRL, N_T=%s$'%state_size)
-    tick_label = [r'$\epsilon=%s$'%eps for eps in Epsilon]
+    tick_label = [r'$%s$'%eps for eps in Epsilon]
     plt.xticks(Xe,tick_label)
-#ax2.set_xlabel(r'$i$')
-ax2.set_ylabel(r'$\Delta c/c_k$')
+ax2.set_xlabel(r'$\epsilon$')
+ax2.set_ylabel(r'$\Delta c/k_k$')
 #ax3.set_ylim((10,30))
 ax2.legend(loc='best',ncol=2)
 plt.show()

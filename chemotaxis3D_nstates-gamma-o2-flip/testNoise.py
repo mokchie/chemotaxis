@@ -8,18 +8,21 @@ del path
 from swimmer_v2 import *
 import copy
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 epsilon = 0.0
 for state_size in [2,4]:
     for xi in [0.0, 0.04, 0.08, 0.12, 0.16, 0.2]:
-        sname = 'test-n%s-xi%s' % (state_size, xi)
-        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-n%s'%state_size)
+        random.seed(83843)
+        sname = 'test-DDQN-n%s-xi%s' % (state_size, xi)
+        loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-DDQN-n%s'%state_size)
         clear(sname+'-greedy')
         clear(sname+'-DRL')
         conc_field = Conc_field(c0=200,k=1)
         test_swimmer2 = Swimmer(dim=3,
                           v0=2,
+                          vw=0.2,
                           k0=6.5, kw=2.0, kn=2,
-                          tau0=0, tauw=2.0, taun=2,
+                          tau0=0.0, tauw=2.0, taun=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,
                           tx0=1, ty0=0, tz0=0,
@@ -28,7 +31,7 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-greedy',
                           xb=[40,50],yb=[40,50],zb=[40,50],
@@ -40,8 +43,9 @@ for state_size in [2,4]:
                           xi_noise=xi)
         test_swimmer3 = Swimmer(dim=3,
                           v0=2,
+                          vw=0.2,
                           k0=6.5, kw=2.0, kn=2,
-                          tau0=0, tauw=2.0, taun=2,
+                          tau0=0.0, tauw=2.0, taun=2,
                           t0=0,
                           rx0=2, ry0=10, rz0=0,
                           tx0=1, ty0=0, tz0=0,
@@ -50,7 +54,7 @@ for state_size in [2,4]:
                           dt=0.002,
                           conc_field=conc_field,
                           targetx=0, targety=1000, targetz=0,
-                          lifespan=240,
+                          lifespan=80,
                           state_size=state_size,
                           sname=sname+'-DRL',
                           xb=[40,50],yb=[40,50],zb=[40,50],
@@ -65,7 +69,7 @@ for state_size in [2,4]:
         scores2 = []
         scores3 = []
 
-        for i in range(100):
+        for i in range(40):
             print('test',i)
             state2 = test_swimmer2.reset()
             done2 = False
