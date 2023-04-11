@@ -16,7 +16,7 @@ cmap = cm.get_cmap('jet')
 fig1 = plt.figure()
 ax1 = plt.axes(projection='3d')
 fig2,ax2 = plt.subplots(1,1)
-pattern = re.compile("test-n2-epsilon0.1-DRL-epoch-([0-9]+).data$")
+pattern = re.compile("test-DDQN-n4-sigma0.06-DRL-epoch-([0-9]+).data$")
 filenames = []
 epochs = []
 direct = "data"
@@ -37,18 +37,28 @@ for epch, filename in files:
     X = []
     Y = []
     Z = []
+    Xr = []
+    Yr = []
+    Zr = []    
     with open(direct+'/'+filename) as fp:
         for line in fp:
             t, rx, ry, rz, tx, ty, tz, nx, ny, nz, bx, by, bz, kappa, tau = [float(item) for item in line.strip().split()]
             #            if int(np.round(t/0.01))%20==0:
             #                ax.scatter([x,],[y,],c='r',s=5)
+            r0 = kappa/(kappa**2+tau**2)                        
             X.append(rx)
             Y.append(ry)
             Z.append(rz)
-    if epch % 1 == 0:
+            Xr.append(rx+nx*r0)
+            Yr.append(ry+ny*r0)
+            Zr.append(rz+nz*r0)            
+    if epch % 4 == 0:
         X = np.array(X)
         Y = np.array(Y)
         Z = np.array(Z)
+        Xr = np.array(Xr)
+        Yr = np.array(Yr)
+        Zr = np.array(Zr)
         x0 = 0#X[0]
         y0 = 0#Y[0]
         z0 = 0#Z[0]
@@ -63,7 +73,6 @@ ax2.plot(Epoch,Gain)
 ax2.plot(Epoch,np.zeros_like(Epoch)+np.average(Gain),'k--')
 ax2.set_xlabel('N')
 ax2.set_ylabel(r'$\Delta c$')
-ax1.scatter([0,],[0,],[0,],s=10,color='r')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')
 ax1.set_zlabel('z')

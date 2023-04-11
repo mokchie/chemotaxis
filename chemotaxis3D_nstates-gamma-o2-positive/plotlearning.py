@@ -2,15 +2,20 @@ import matplotlib
 from mpl_toolkits import mplot3d
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import re,os
+import re
 import numpy as np
 import matplotlib
-from swimmer import Conc_field
+import os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
+from swimmer_v2 import Conc_field
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 fig1,ax1 = plt.subplots(1,1)
-labels = [r'DQN $N_T=2$',r'DQN $N_T=4$',r'DDQN $N_T=2$',r'DDQN $N_T=4$']
-for ii,sname in enumerate(['sample-n2','sample-n4','sample-DDQN-n2','sample-DDQN-n4']):
+labels = [r'DDQN $N_T=2$',r'DDQN $N_T=4$']
+for ii,sname in enumerate(['sample-DDQN-n2','sample-DDQN-n4']):
     pattern = re.compile(sname+"-epoch-([0-9]+).data$")
     reward_file = sname+"-rewards.data"
     filenames = []

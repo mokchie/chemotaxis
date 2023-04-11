@@ -2,10 +2,14 @@ import matplotlib
 from mpl_toolkits import mplot3d
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import re,os
+import re,os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
 import numpy as np
 import matplotlib
-from swimmer import Conc_field
+from swimmer_v2 import Conc_field
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 fig1 = plt.figure()

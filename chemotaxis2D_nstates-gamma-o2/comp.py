@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import re,os
 import numpy as np
 matplotlib.rcParams.update({'font.size':14,'font.family':'sans-serif'})
-state_size = 4
+state_size = 2
 sname = 'test-DDQN-n%s'%(state_size,)
 cmap = cm.get_cmap('jet')
 fig1, ax1 = plt.subplots(1, 1)
@@ -42,8 +42,11 @@ for root, dirs, files in os.walk(direct):
 R1 = []
 R2 = []
 R3 = []
-files = sorted(zip(epochs1, filenames1, epochs2, filenames2, epochs3, filenames3))
-for epch1, filename1, epch2, filename2, epch3, filename3 in files:
+files1 = sorted(zip(epochs1, filenames1))
+files2 = sorted(zip(epochs2, filenames2))
+files3 = sorted(zip(epochs3, filenames3))
+files = zip(files1,files2,files3)
+for (epch1, filename1), (epch2, filename2), (epch3, filename3) in files:
     X1 = []
     Y1 = []
     Xr1 = []
@@ -121,7 +124,7 @@ ax3.plot(np.array(range(len(R1)))+1,R1,'o--', color='C0',label='alternating')
 ax3.plot(np.array(range(len(R1)))+1,np.average(R1)+np.zeros_like(R1),'-',color='C0')
 ax3.plot(np.array(range(len(R2)))+1,R2,'v--',color='C1',label='short-sighted')
 ax3.plot(np.array(range(len(R2)))+1,np.average(R2)+np.zeros_like(R2),'-',color='C1')
-ax3.plot(np.array(range(len(R3)))+1,R3,'v--',color='C2',label='DRL')
+ax3.plot(np.array(range(len(R3)))+1,R3,'s--',color='C2',label='DRL')
 ax3.plot(np.array(range(len(R3)))+1,np.average(R3)+np.zeros_like(R3),'-',color='C2')
 # ax.scatter([0,],[0,],s=10,c='r')
 ax1.set_aspect('equal')

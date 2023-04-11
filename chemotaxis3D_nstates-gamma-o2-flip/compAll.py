@@ -108,12 +108,12 @@ for cn,state_size in enumerate([2, 4]):
     width = 0.01
     error_params = dict(elinewidth=1,ecolor='k',capsize=1)
     Xe = Epsilon
-    ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='$greedy, N_T=%s$'%state_size)
-    ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='$DRL, N_T=%s$'%state_size)
+    ax2.bar(Xe-width/2+(cn*2-1)*width,DeltaC[:,0],width=width,yerr=DeltaCErr[:,0],error_kw=error_params,color=colors1[cn],label='short-sighted, $N_T=%s$'%state_size)
+    ax2.bar(Xe+width/2+(cn*2-1)*width, DeltaC[:,1],width=width,yerr=DeltaCErr[:,1], error_kw = error_params, color=colors2[cn],label='DRL, $N_T=%s$'%state_size)
     tick_label = [r'$%s$' % eps for eps in Epsilon]
     plt.xticks(Xe,tick_label)
 ax2.set_xlabel(r'$\epsilon$')
 ax2.set_ylabel(r'$\Delta c/c_k$')
 #ax3.set_ylim((10,30))
-ax2.legend(loc='best',ncol=2)
+ax2.legend(loc='best',ncol=1)
 plt.show()

@@ -1,0 +1,9 @@
+#!/bin/bash -x
+#SBATCH --job-name 3D-tau0.7
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --output=mpi-out
+#SBATCH --error=mpi-err
+#SBATCH --time=24:00:00
+#SBATCH --partition=wzhctest
+./run.sh

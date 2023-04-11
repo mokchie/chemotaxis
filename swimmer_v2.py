@@ -15,6 +15,17 @@ class Conc_field:
     def get_conc(self,x,y,z=0):
         # return c0-np.sqrt(x**2+y**2)/2.5
         return self.c0+self.k*y
+    def get_vec(self):
+        return np.array([0,1,0])
+class Conc_field_x:
+    def __init__(self,c0=200,k=1):
+        self.c0 = c0
+        self.k = k
+    def get_conc(self,x,y,z=0):
+        # return c0-np.sqrt(x**2+y**2)/2.5
+        return self.c0+self.k*x
+    def get_vec(self):
+        return np.array([1,0,0])    
 class Conc_field_radial:
     def __init__(self,c0=200,k=1):
         self.c0 = c0
@@ -42,7 +53,7 @@ def clear(sname):
                 os.remove('data/'+name)
 
 class Swimmer:
-    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=10,sigma_kappa=0,sigma_tau=0):
+    def __init__(self, dim=3, v0=1.0, vw=0, k0=1.0, kw=1.0, kn=2, tau0=0, tauw=0, taun=1,t0=0.0, rx0=0.0, ry0=0.0, rz0=0, tx0=1.0, ty0=0.0, tz0=0, nx0=0.0, ny0=1.0, nz0=0, dt=0.002, Taction=1/4, conc_field=Conc_field(), targetx=0.0, targety=10000, targetz=0, lifespan=10, sname='sample', xb=(0,0), yb=(0,0), zb=(0,0), state_size=4, rand=False, dump_freq=1, Regg=1.0, actionAll=True, vel_field=None,xi_noise=0,saving_interval_dt=10,sigma_kappa=0,sigma_tau=0,accurate_reward=False,direction_reward=True):
         self.sname = sname
         self.epch = 0
         self.v0 = v0
@@ -94,6 +105,8 @@ class Swimmer:
         self.targetz = targetz
         self.Regg = Regg
         self.done = False
+        self.accurate_reward = accurate_reward
+        self.direction_reward = direction_reward
         self.lifespan = lifespan
         self.state_size = state_size  # the most recent concentration, and the values of 'a'
         self.actionAll = actionAll
@@ -132,7 +145,17 @@ class Swimmer:
         self.xi_noise = xi_noise
         self.saving_interval_dt = saving_interval_dt
         self.memc = deque(maxlen=self.state_size)
-
+    def get_h(self):
+        theta0 = np.arctan(self.tau/self.kappa)
+        if theta0<0:
+            theta0+=np.pi
+        hx = np.sin(theta0) * self.tx + np.cos(theta0) * self.bx
+        hy = np.sin(theta0) * self.ty + np.cos(theta0) * self.by
+        hz = np.sin(theta0) * self.tz + np.cos(theta0) * self.bz
+        return np.array([hx,hy,hz])
+    def get_center(self):
+        r0 = self.kappa/(self.kappa**2+self.tau**2)
+        return np.array([self.rx+r0*self.nx,self.ry+r0*self.ny,self.rz+r0*self.nz])
     def reset(self,theta=None):
         self.v = self.vs[int(len(self.vs) / 2)]
         self.memc = deque(maxlen=self.state_size)
@@ -258,11 +281,35 @@ class Swimmer:
         self.v = self.vs[self.actions.index(target)]
         if self.dim == 2:
             omega = self.v0*self.k0
+            c_center0 = self.get_conc(self.rx+self.nx/self.kappa,self.ry+self.ny/self.kappa)
+            #c_center1 = self.get_conc(self.rx+self.nx/target,self.ry+self.ny/target)
         else:
             omega = self.v0*np.sqrt(self.k0**2+self.tau0**2)
+            c_center0 = self.get_conc(self.rx+self.nx/self.kappa,self.ry+self.ny/self.kappa,self.rz+self.nz/self.kappa)
+            #c_center1 = self.get_conc(self.rx+self.nx/target[0],self.ry+self.ny/target[0],self.rz+self.nz/target[0])
+            theta0 = np.arctan(self.tau/self.kappa)
+            if theta0<0:
+                theta0+=np.pi
+            theta1 = np.arctan(target[1]/target[0])
+            if theta1<0:
+                theta1+=np.pi
+            helix_v1 = np.array([np.sin(theta1)*self.tx,
+                                np.sin(theta1)*self.ty,
+                                np.sin(theta1)*self.tz]) \
+                        + np.array([np.cos(theta1) * self.bx,
+                                    np.cos(theta1) * self.by,
+                                    np.cos(theta1) * self.bz])
+            helix_v0 = np.array([np.sin(theta0) * self.tx,
+                                 np.sin(theta0) * self.ty,
+                                 np.sin(theta0) * self.tz]) \
+                       + np.array([np.cos(theta0) * self.bx,
+                                   np.cos(theta0) * self.by,
+                                   np.cos(theta0) * self.bz])
+
         ntimes = int(np.round(self.Taction * 2 * np.pi / omega / self.dt))
         dt = self.Taction * 2 * np.pi / omega / ntimes
         previous_states = deepcopy(states[0:-self.lstate])
+
         for i in range(ntimes):
             if self.dim == 2:
                 self.kappa = target
@@ -357,17 +404,33 @@ class Swimmer:
         ca0 = np.average(self.memc)
         self.memc.append(c)
         ca1 = np.average(self.memc)
+        if self.dim==2:
+            c_center1 = self.get_conc(self.rx + self.nx / self.kappa, self.ry + self.ny / self.kappa)
+        else:
+            c_center1 = self.get_conc(self.rx + self.nx / self.kappa, self.ry + self.ny / self.kappa,
+                                      self.rz + self.nz / self.kappa)
         #reward = (c_center1 - c_center0)*10
         if self.dim==2:
-            reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k
-        else:
-            if self.actionAll:
-                rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
-                rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
+            if not self.accurate_reward:
+                reward = (ca1-ca0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k
             else:
-                rmin = (self.k0 + self.kw / 2) / ((self.k0 + self.kw / 2) ** 2 + (self.tau0 - self.tauw / 2) ** 2)
-                rmax = (self.k0 - self.kw / 2) / ((self.k0 - self.kw / 2) ** 2 + (self.tau0 + self.tauw / 2) ** 2)
-            reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
+                reward = (c_center1 - c_center0)/np.abs(1/(self.k0-self.kw/2) - 1/(self.k0+self.kw/2))/self.conc_field.k            
+            
+        else:
+            if self.direction_reward:
+                reward = np.sum(helix_v1 * self.conc_field.get_vec())# - helix_v0 * self.conc_field.get_vec()
+            else:
+                if self.actionAll:
+                    rmin = (self.k0+self.kw/2)/((self.k0+self.kw/2)**2+(self.tau0+self.tauw/2)**2)
+                    rmax = (self.k0-self.kw/2)/((self.k0-self.kw/2)**2+(self.tau0-self.tauw/2)**2)
+                else:
+                    rmin = (self.k0 + self.kw / 2) / ((self.k0 + self.kw / 2) ** 2 + (self.tau0 - self.tauw / 2) ** 2)
+                    rmax = (self.k0 - self.kw / 2) / ((self.k0 - self.kw / 2) ** 2 + (self.tau0 + self.tauw / 2) ** 2)
+                if not self.accurate_reward:
+                    reward = (ca1 - ca0) / np.abs(rmax-rmin) / self.conc_field.k
+                else:
+                    reward = (c_center1 - c_center0) / np.abs(rmax-rmin) / self.conc_field.k
+            
         #pdb.set_trace()
         return [np.concatenate((np.array([c,self.kappa]),previous_states)), reward, self.done, {}]
 
@@ -387,13 +450,13 @@ class Swimmer:
 
 
 class DQN():
-    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98, N_hidden = 3, N_neurons=24, DDQN=False, align_freq=25):
+    def __init__(self, swimmer=Swimmer(), epochs=100, batch_size=128, gamma=0.98, epsilon_min=0.1, epsilon_decay=0.98, N_hidden = 3, N_neurons=24, DDQN=False, align_freq=25, alpha=0.01):
         self.memory = deque(maxlen=10000)
         self.env = swimmer
         self.input_size = self.env.state_size*self.env.lstate
         self.action_size = self.env.action_size
         self.batch_size = batch_size
-        self.gamma = gamma #gamma is the learning rate
+        self.gamma = gamma 
         self.epsilon = 1.0
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
@@ -402,11 +465,11 @@ class DQN():
         self.epochs = epochs
         self.DDQN = DDQN
         self.align_freq = align_freq
-        alpha = 0.01
+        self.alpha = alpha
         alpha_decay = 0.1
 
         self.Q_network = self.build_network()
-        self.Q_network.compile(loss='mse', optimizer=Adam(learning_rate=alpha, decay=alpha_decay))
+        self.Q_network.compile(loss='mse', optimizer=Adam(learning_rate=self.alpha, decay=alpha_decay))
         if self.DDQN:
             self.t_network = self.build_network()
         # Init model
@@ -525,7 +588,6 @@ class DQN():
                     next_states, reward, done, _ = self.env.step(states, self.env.actions[ai])
                     self.remember(deepcopy(states), ai, reward, next_states, done)
                     #pdb.set_trace()
-
                     # self.epsilon = max(self.epsilon_min, self.epsilon_decay*self.epsilon) # decrease epsilon
                 states = next_states
                 i += 1
@@ -535,10 +597,12 @@ class DQN():
             for ret in reversed(rets):
                 ret_sum = ret+self.gamma*ret_sum
             if self.env.dim == 2:
-                scores.append(self.env.get_conc(self.env.rx,self.env.ry) - self.env.get_conc(self.env.rx0,self.env.ry0))
+                score = self.env.get_conc(self.env.rx,self.env.ry) - self.env.get_conc(self.env.rx0,self.env.ry0)
             else:
-                scores.append(self.env.get_conc(self.env.rx, self.env.ry, self.env.rz) - self.env.get_conc(self.env.rx0, self.env.ry0, self.env.rz0))
-            self.frw.write('%s %s %s\n' % (e, ret_sum, tot_reward))
+                score = self.env.get_conc(self.env.rx, self.env.ry, self.env.rz) - self.env.get_conc(self.env.rx0, self.env.ry0, self.env.rz0)
+            scores.append(score)
+            self.frw.write('%s %s %s\n' % (e, score, tot_reward))
+            self.frw.flush()
             mean_score = np.mean(scores)
             print(f'tot_reward: {tot_reward} return: {ret_sum} mean_score: {mean_score}' )
             avg_scores.append(mean_score)

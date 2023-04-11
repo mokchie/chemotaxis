@@ -1,16 +1,21 @@
 import pdb
-
+import os,sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not path in sys.path:
+    sys.path.insert(1, path)
+del path
 import matplotlib
 from mpl_toolkits import mplot3d
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import re,os
+import re
 import numpy as np
 import matplotlib
-from swimmer import Conc_field
+from swimmer_v2 import Conc_field
 matplotlib.rcParams.update({'font.size':14, 'font.family':'sans-serif'})
 cmap = cm.get_cmap('jet')
 colors = ['C'+str(i) for i in range(10)]
+fillcolors = ["#D3E5F0","#FFE7D3"]
 fig1,ax1 = plt.subplots(1,1)
 
 
@@ -89,9 +94,10 @@ for cn,state_size in enumerate([2,4]):
     #ax1.plot(coarseave(Epi,10),coarseave(Ret,10),'b-',label='return')
     xx = coarseave(Epi,10)
     yy = coarseave(Rew,10)
+    ax1.fill_between(xx,yy-coarseerr(Rew, 10),yy+coarseerr(Rew, 10), color=colors[cn],alpha=0.2)    
     ax1.plot(xx,yy,'-',color=colors[cn],label=r'$N_T=%s$'%(state_size))
     #pdb.set_trace()
-    ax1.fill_between(xx,yy-coarseerr(Rew, 10),yy+coarseerr(Rew, 10), alpha=0.2,color=colors[cn])
+
 
 #ax3.plot(Epi[9::10],Rew[9::10])
 ax1.set_xlabel('Episode')

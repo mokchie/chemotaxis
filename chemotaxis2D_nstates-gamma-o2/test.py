@@ -10,10 +10,12 @@ if not path in sys.path:
 del path
 from swimmer_v2 import *
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-state_size = 4
+state_size = 2
 sname = 'test-DDQN-n%s'%state_size
 loaded_model = tf.keras.models.load_model('saved_model/saved_model_sample-DDQN-n%s'%state_size)
-clear(sname)
+clear(sname+'swinging')
+clear(sname+'DRL')
+clear(sname+'greedy')
 #conc_field = Conc_field_radial(c0=200,k=1)
 conc_field = Conc_field(c0=20,k=1)
 random.seed(1)
@@ -116,7 +118,6 @@ for i in range(40):
         #print(reward)
         R1+=reward1
         state1 = deepcopy(next_state1)
-        j+=1
         print('R1:',R1)
 
         if j<state_size:
@@ -128,7 +129,6 @@ for i in range(40):
         #print(reward)
         R2+=reward2
         state2 = deepcopy(next_state2)
-        j+=1
         print('R2:',R2)
 
         if j<state_size:
